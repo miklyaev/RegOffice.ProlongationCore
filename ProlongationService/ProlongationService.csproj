@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-ProlongationService-bb62b0e2-dca6-4a5b-95a4-2450d9d6b964</UserSecretsId>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerfileContext>.</DockerfileContext>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="EntityFrameworkCore.Scaffolding.Handlebars" Version="7.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.10">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="7.0.1" />
+    <PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.7.0" />
+    <PackageReference Include="Quartz.Extensions.Hosting" Version="3.7.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RegOffice.AstralLogger\RegOffice.AstralLogger.csproj" />
+    <ProjectReference Include="..\RegOffice.DataModel\RegOffice.DataModel.csproj" />
+    <ProjectReference Include="..\RegOffice.General\RegOffice.General.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Model\" />
+  </ItemGroup>
+</Project>
