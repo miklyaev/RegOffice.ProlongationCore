@@ -24,14 +24,25 @@ namespace ProlongationService
             Handlebars.RegisterHelper("ro-helper", AstralHbsHelper);
 
             services.AddHandlebarsTransformers2(
-                entityTypeNameTransformer: n => n.Replace("Ro", ""),
-                entityFileNameTransformer: n => n.Replace("Ro", ""),
+                entityTypeNameTransformer: n => ReplacePrefix("Ro", n),
+                entityFileNameTransformer: n => ReplacePrefix("Ro", n),
                 constructorTransformer: (e, p) => CreateEntityPropertyInfo(p),
                 propertyTransformer: (e, p) => CreateEntityPropertyInfo(p),
                 navPropertyTransformer: (e, p) => CreateEntityPropertyInfo(p)
                 );
         }
 
+        private string ReplacePrefix(string prefix, string input)
+        {
+            if (!string.IsNullOrWhiteSpace(input))
+            {
+                Regex regex = new Regex("^" + prefix);
+                string newString = regex.Replace(input, "");
+                return newString;
+            }
+
+            return input;
+        }
         private EntityPropertyInfo CreateEntityPropertyInfo(EntityPropertyInfo p)
         {
             if (p != null && p.PropertyType != null && p.PropertyName != null)
