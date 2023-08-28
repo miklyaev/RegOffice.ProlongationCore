@@ -1,6 +1,6 @@
-﻿using ProlongationService.Containers;
+﻿using Microsoft.EntityFrameworkCore;
+using ProlongationService.Containers;
 using RegOffice.DataModel;
-using RegOffice.DataModel.Model;
 using RegOffice.General.Enums;
 using RegOffice.General.Models;
 using System;
@@ -25,7 +25,6 @@ namespace ProlongationService.Code
             var sixMonthAgo = DateTime.Now.AddMonths(-6);
             var minDate = DateTime.MinValue;
             var steps = new[] { (int)StepTypeInfo.Locked, (int)StepTypeInfo.Revoked, (int)StepTypeInfo.Replaced };
-            var DbF = Microsoft.EntityFrameworkCore.EF.Functions;
             var offices = _dataEngine.DataModel.Offices.Where(x => x.AgentId == agentId && x.OffTime == null).Select(x => x.OfficeId).ToArray();
 
             var products = _dataEngine.DataModel.Products.Where(x =>
@@ -49,10 +48,11 @@ namespace ProlongationService.Code
                 from k in _dataEngine.DataModel.Keys.Where(k => k.KeyId == pp.KeyId).DefaultIfEmpty()
                 from cert in _dataEngine.DataModel.Certificates.Where(cert => cert.CertificateId == k.CertificateId).DefaultIfEmpty()
                 from ctExt in _dataEngine.DataModel.ContractTariffExtensions.Where(ext => ct.ContractTariffId == ext.ExtensionId).DefaultIfEmpty()
-
+                let endDate = ct.EndDate.Value.ToDateTime(new TimeOnly(0, 0, 0))
                 where
+                    
                     ta == null &&
-                    ct.EndDate > sixMonthAgo &&
+                    endDate > sixMonthAgo &&
                     !steps.Contains(ct.StepId) &&
                     (productTypeIds.Contains(pp.ProductTypeId) || pr.ProductTypeId == (int)ProductTypeInfo.Sedna) &&
                     (pt == null && pr.ProxyAgentId == null || pt.ProductId == pr.ProductId)
@@ -81,20 +81,20 @@ namespace ProlongationService.Code
                     AbonentId = grp.Key.AbonentId,
                     RegistrationNumber = grp.Key.RegistrationNumber,
                     ContractId = grp.Key.ContractId,
-                    TariffInitialDate = EntityFunctions.TruncateTime(ctsBase.TariffInitialDate),
-                    TariffEndDate = EntityFunctions.TruncateTime(ctsBase.TariffEndDate),
-                    CertificateInitialDate = EntityFunctions.TruncateTime(cts.FirstOrDefault().CertificateInitialDate),
-                    CertificateEndDate = EntityFunctions.TruncateTime(cts.FirstOrDefault().CertificateEndDate),
+                    TariffInitialDate = ctsBase.TariffInitialDate.ToDateTime(new TimeOnly(0, 0, 0)),
+                    TariffEndDate = ctsBase.TariffEndDate.Value.ToDateTime(new TimeOnly(0, 0, 0)),
+                    CertificateInitialDate = cts.FirstOrDefault().CertificateInitialDate.Date,
+                    CertificateEndDate = cts.FirstOrDefault().CertificateEndDate.Date,
                     TotalSum = cts.Sum(x => x.TotalSum),
                 }).Distinct().ToList();
 
             return (from q in query
-                    from psd in _dataEngine.DataModel.ProlongationShortData.Where(psd =>
+                    from psd in _dataEngine.DataModel.ProlongationShortDatas.Where(psd =>
                         psd.ProductId == q.ProductId &&
                         psd.AbonentId == q.AbonentId &&
                         psd.ContractId == q.ContractId &&
-                        (psd.TariffEndDate ?? minDate) == (q.TariffEndDate ?? minDate) &&
-                        (psd.CertificateEndDate ?? minDate) == (q.CertificateEndDate ?? minDate) &&
+                        (psd.TariffEndDate.HasValue ? psd.TariffEndDate.Value.ToDateTime(new TimeOnly(0, 0, 0)) : minDate) == (q.TariffEndDate ?? minDate) &&
+                        (psd.CertificateEndDate.HasValue ? psd.CertificateEndDate.Value.ToDateTime(new TimeOnly(0, 0, 0)) : minDate) == (q.CertificateEndDate ?? minDate) &&
                         psd.TotalSum == q.TotalSum &&
                         (psd.RegistrationNumber ?? string.Empty) == (q.RegistrationNumber ?? string.Empty)
                     ).DefaultIfEmpty()

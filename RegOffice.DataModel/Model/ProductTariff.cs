@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace RegOffice.DataModel.Model2
+namespace RegOffice.DataModel.Model
 {
     /// <summary>
     /// Таблица услуг продукта
