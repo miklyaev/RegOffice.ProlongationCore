@@ -48,7 +48,7 @@ namespace ProlongationService.Code
                 from k in _dataEngine.DataModel.Keys.Where(k => k.KeyId == pp.KeyId).DefaultIfEmpty()
                 from cert in _dataEngine.DataModel.Certificates.Where(cert => cert.CertificateId == k.CertificateId).DefaultIfEmpty()
                 from ctExt in _dataEngine.DataModel.ContractTariffExtensions.Where(ext => ct.ContractTariffId == ext.ExtensionId).DefaultIfEmpty()
-                let endDate = ct.EndDate.Value.ToDateTime(new TimeOnly(0, 0, 0))
+                let endDate = ct.EndDate.HasValue ? ct.EndDate.Value.ToDateTime(new TimeOnly(0, 0, 0)) : default
                 where
                     
                     ta == null &&
@@ -82,9 +82,9 @@ namespace ProlongationService.Code
                     RegistrationNumber = grp.Key.RegistrationNumber,
                     ContractId = grp.Key.ContractId,
                     TariffInitialDate = ctsBase.TariffInitialDate.ToDateTime(new TimeOnly(0, 0, 0)),
-                    TariffEndDate = ctsBase.TariffEndDate.Value.ToDateTime(new TimeOnly(0, 0, 0)),
-                    CertificateInitialDate = cts.FirstOrDefault().CertificateInitialDate.Date,
-                    CertificateEndDate = cts.FirstOrDefault().CertificateEndDate.Date,
+                    TariffEndDate = ctsBase.TariffEndDate.HasValue ? ctsBase.TariffEndDate.Value.ToDateTime(new TimeOnly(0, 0, 0)) : default,
+                    CertificateInitialDate = cts.FirstOrDefault() != null ? cts.FirstOrDefault().CertificateInitialDate.Date : default,
+                    CertificateEndDate = cts.FirstOrDefault() != null ? cts.FirstOrDefault().CertificateEndDate.Date : default,
                     TotalSum = cts.Sum(x => x.TotalSum),
                 }).Distinct().ToList();
 
