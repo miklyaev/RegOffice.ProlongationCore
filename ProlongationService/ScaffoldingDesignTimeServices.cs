@@ -37,8 +37,7 @@ namespace ProlongationService
             if (!string.IsNullOrWhiteSpace(input))
             {
                 Regex regex = new Regex("^" + prefix);
-                string newString = regex.Replace(input, "");
-                return newString;
+                return regex.Replace(input, "");
             }
 
             return input;
