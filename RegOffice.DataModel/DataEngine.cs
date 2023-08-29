@@ -62,7 +62,8 @@ namespace RegOffice.DataModel
 
         public bool Close()
         {
-            throw new NotImplementedException();
+            Dispose();
+            return _connected;
         }
 
         public void Detach(object entity)
@@ -87,7 +88,8 @@ namespace RegOffice.DataModel
 
         public IEnumerable<T> ExecuteStoreQuery<T>(string query)
         {
-            throw new NotImplementedException();
+            FormattableString formattableString = $"{query}";
+            return _dataModel.Database.SqlQuery<T>(formattableString);
         }
 
         public IEnumerable<T> ExecuteStoreQuery<T>(string query, params object[] parameters)

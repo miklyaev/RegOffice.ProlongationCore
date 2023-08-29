@@ -1,4 +1,5 @@
-﻿using ProlongationService.Containers;
+﻿using Microsoft.EntityFrameworkCore.Storage;
+using ProlongationService.Containers;
 using RegOffice.DataModel;
 using RegOffice.DataModel.Model;
 using RegOffice.General.Models;
@@ -41,7 +42,7 @@ namespace ProlongationService.Code
 
             foreach (var agentId in agentIds)
             {
-                IDbTransaction transaction = null;
+                IDbContextTransaction transaction = null;
                 try
                 {
                     var prdata = _repository.ProlongationDataLinq(agentId, products);
