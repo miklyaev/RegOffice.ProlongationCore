@@ -13,7 +13,10 @@ using static System.Net.Mime.MediaTypeNames;
 
 namespace ProlongationService
 {
-
+    /// <summary>
+    /// Класс для кастомизации кода сгенерированного scaffold скриптом
+    /// Убирает префикс Ro, т.к. таблицы в базе начинаются на ro_
+    /// </summary>
     public class ScaffoldingDesignTimeServices : IDesignTimeServices
     {
         public void ConfigureDesignTimeServices(IServiceCollection services)
@@ -26,9 +29,9 @@ namespace ProlongationService
             services.AddHandlebarsTransformers2(
                 entityTypeNameTransformer: n => ReplacePrefix("Ro", n),
                 entityFileNameTransformer: n => ReplacePrefix("Ro", n),
-                constructorTransformer: (e, p) => CreateEntityPropertyInfo(p),
-                propertyTransformer: (e, p) => CreateEntityPropertyInfo(p),
-                navPropertyTransformer: (e, p) => CreateEntityPropertyInfo(p)
+                constructorTransformer: (e, p) => CreateEntityPropertyInfo(p, "Ro"),
+                propertyTransformer: (e, p) => CreateEntityPropertyInfo(p, "Ro"),
+                navPropertyTransformer: (e, p) => CreateEntityPropertyInfo(p, "Ro")
                 );
         }
 
@@ -42,11 +45,11 @@ namespace ProlongationService
 
             return input;
         }
-        private EntityPropertyInfo CreateEntityPropertyInfo(EntityPropertyInfo p)
+        private EntityPropertyInfo CreateEntityPropertyInfo(EntityPropertyInfo p, string prefix)
         {
             if (p != null && p.PropertyType != null && p.PropertyName != null)
             {
-                Regex regex = new Regex("^Ro");
+                Regex regex = new Regex("^" + prefix);
                 string typePrefix = regex.Replace(p.PropertyType, "");
                 string namePrefix = regex.Replace(p.PropertyName, "");
 
