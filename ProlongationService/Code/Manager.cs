@@ -24,60 +24,60 @@ namespace ProlongationService.Code
 
         private readonly List<int> _protocols = new List<int> { 2, 13 };
 
-        //public void ProcessProlongationShortData()
-        //{
-        //    var products = new[]
-        //    {
-        //        (int) ProductTypeInfo.Mercury,
-        //        (int) ProductTypeInfo.Niobium,
-        //        (int) ProductTypeInfo.Dysprosium,
-        //        (int) ProductTypeInfo.Krypton,
-        //        (int) ProductTypeInfo.Venus,
-        //        (int) ProductTypeInfo.Curium,
-        //        (int) ProductTypeInfo.Sedna
-        //    };
+        public void ProcessProlongationShortData()
+        {
+            var products = new[]
+            {
+                (int) ProductTypeInfo.Mercury,
+                (int) ProductTypeInfo.Niobium,
+                (int) ProductTypeInfo.Dysprosium,
+                (int) ProductTypeInfo.Krypton,
+                (int) ProductTypeInfo.Venus,
+                (int) ProductTypeInfo.Curium,
+                (int) ProductTypeInfo.Sedna
+            };
 
-        //    var agentIds = _repository.GetProductAgents(products).ToList();
+            var agentIds = _repository.GetProductAgents(products).ToList();
 
-        //    foreach (var agentId in agentIds)
-        //    {
-        //        IDbTransaction transaction = null;
-        //        try
-        //        {
-        //            var prdata = _repository.ProlongationDataLinq(agentId, products);
+            foreach (var agentId in agentIds)
+            {
+                IDbTransaction transaction = null;
+                try
+                {
+                    var prdata = _repository.ProlongationDataLinq(agentId, products);
 
-        //            transaction = _dataEngine.BeginTransaction();
+                    transaction = _dataEngine.BeginTransaction();
 
-        //            foreach (var psdInfo in prdata)
-        //            {
-        //                var psdBase =
-        //                    _repository.GetProlongationShortDatum(psdInfo.ProductId, psdInfo.ContractId);
+                    foreach (var psdInfo in prdata)
+                    {
+                        var psdBase =
+                            _repository.GetProlongationShortDatum(psdInfo.ProductId, psdInfo.ContractId);
 
-        //                psdBase = psdBase == null
-        //                    ? _repository.AddProlongationShortDatum(psdInfo)
-        //                    : _repository.UpdateProlongationShortDatum(psdBase, psdInfo);
+                        psdBase = psdBase == null
+                            ? _repository.AddProlongationShortDatum(psdInfo)
+                            : _repository.UpdateProlongationShortDatum(psdBase, psdInfo);
 
-        //                _dataEngine.SaveChanges();
-        //            }
+                        _dataEngine.SaveChanges();
+                    }
 
-        //            _repository.UpdateShortDataSummary(agentId);
-        //            transaction.Commit();
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            transaction?.Rollback();
+                    _repository.UpdateShortDataSummary(agentId);
+                    transaction.Commit();
+                }
+                catch (Exception ex)
+                {
+                    transaction?.Rollback();
 
-        //            string message = $"Ошибка при обновлении партнера: {agentId}\n" +
-        //                             $"{(ex.InnerException == null ? ex.Message : $"Exception Message: {ex.Message}\n InnerException Message:{ex.InnerException.Message} ")}" +
-        //                             $"{ex.StackTrace}";
+                    string message = $"Ошибка при обновлении партнера: {agentId}\n" +
+                                     $"{(ex.InnerException == null ? ex.Message : $"Exception Message: {ex.Message}\n InnerException Message:{ex.InnerException.Message} ")}" +
+                                     $"{ex.StackTrace}";
 
-        //            ServiceLogger.WriteLog(message, LogTypeInfo.Error, ApplicationInfo.ProlongationService, _dataEngine);
-        //        }
-        //        finally
-        //        {
-        //            transaction?.Dispose();
-        //        }
-        //    }
-        //}
+                    ServiceLogger.WriteLog(message, LogTypeInfo.Error, ApplicationInfo.ProlongationService, _dataEngine);
+                }
+                finally
+                {
+                    transaction?.Dispose();
+                }
+            }
+        }
     }
 }
