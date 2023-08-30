@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage;
 using ProlongationService.Containers;
+using ProlongationService.Services;
+using RegOffice.AstralLogger;
 using RegOffice.DataModel;
 using RegOffice.DataModel.Model;
 using RegOffice.General.Models;
@@ -12,15 +14,19 @@ using System.Threading.Tasks;
 
 namespace ProlongationService.Code
 {
-
     public class Manager
     {
         private readonly IDataEngine _dataEngine;
         private IRepository _repository;
+        private readonly IAppLogger _logger;
+        private readonly IDocflowsStatisticsService _docflowsStatisticsService;
 
-        public Manager(IRepository repository)
+        public Manager(IRepository repository, IDocflowsStatisticsService docflowsStatisticsService, IDataEngine dataEngine, IAppLogger logger)
         {
             _repository = repository;
+            _logger = logger;
+            _docflowsStatisticsService = docflowsStatisticsService;
+            _dataEngine = dataEngine;
         }
 
         private readonly List<int> _protocols = new List<int> { 2, 13 };
@@ -67,12 +73,7 @@ namespace ProlongationService.Code
                 catch (Exception ex)
                 {
                     transaction?.Rollback();
-
-                    string message = $"Ошибка при обновлении партнера: {agentId}\n" +
-                                     $"{(ex.InnerException == null ? ex.Message : $"Exception Message: {ex.Message}\n InnerException Message:{ex.InnerException.Message} ")}" +
-                                     $"{ex.StackTrace}";
-
-                    ServiceLogger.WriteLog(message, LogTypeInfo.Error, ApplicationInfo.ProlongationService, _dataEngine);
+                    _logger.Error(ex, "Ошибка при обновлении партнера: {agentId}, {ErrorMessage}", agentId, ExceptionFilter.GetMessage(ex));
                 }
                 finally
                 {
@@ -80,5 +81,146 @@ namespace ProlongationService.Code
                 }
             }
         }
+
+        public void RemoveOutdatedProlongationData()
+        {
+            var outdatedProlongationData = _repository.GetOutdatedProlongationData();
+
+            foreach (var outdatedProlongationDatum in outdatedProlongationData)
+            {
+                _repository.RemoveProlongationShortDatum(outdatedProlongationDatum);
+            }
+
+            _dataEngine.SaveChanges();
+        }
+
+        public void RemoveUnactiveProductsData()
+        {
+            var unactiveProlongationData = _repository.GetUnactiveProlongationData();
+
+            foreach (var unactiveProlongationDatum in unactiveProlongationData)
+            {
+                _repository.RemoveProlongationShortDatum(unactiveProlongationDatum);
+            }
+
+            _dataEngine.SaveChanges();
+        }
+
+        public void RemoveTransferredProductsData()
+        {
+            var transferredData = _repository.GetTransferredProlongationData();
+
+            foreach (var prolongationShortDatum in transferredData)
+            {
+                _repository.RemoveProlongationShortDatum(prolongationShortDatum);
+            }
+
+            _dataEngine.SaveChanges();
+        }
+
+        public void UpdateNoDispatchFlags(bool partial)
+        {
+            var abonentsIds = partial
+                ? _repository.GetNoDispatchAbonentsIds()
+                : _repository.GetAbonentsIds();
+
+            int counter = 0;
+            int _portionSize = 700;
+            DateTime begin = DateTime.Now.AddDays(-90);
+            DateTime end = DateTime.Now.AddDays(1);
+
+            int attemptCount = 0;
+
+            while (true)
+            {
+                var ids = abonentsIds.Take(_portionSize).ToList();
+                var guids = _repository.GetAbonentsGuids(ids);
+
+                try
+                {
+                    List<DocflowsStatisticsData> docflowsStatistics = _docflowsStatisticsService.GetDocflowsStatistics(guids, begin, end);
+                    UpdateNoDispatchFlags(ids, docflowsStatistics);
+                    UpdateOfdNoDispatchFlags(docflowsStatistics);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "Ошибка при актуализации флага отсутствия отправок.");
+                    if (attemptCount < 1)
+                    {
+                        attemptCount += 1;
+                        continue;
+                    }
+                    _logger.Error("Превышено максимальное число попыток получения данных.");
+                }
+
+                if (abonentsIds.Count > _portionSize)
+                    abonentsIds.RemoveRange(0, _portionSize);
+                else
+                    break;
+
+                if (counter % (_portionSize * 5) == 0)
+                {
+                    _dataEngine.Reopen();
+                    _repository = new Repository(_dataEngine);
+                    _logger.Information("Обработка очередной порции данных завершена. Остаток: {abonentsIds.Count}.", abonentsIds.Count);
+                }
+
+                counter += _portionSize;
+                attemptCount = 0;
+            }
+            _logger.Information("Сервис обновил все данные об отправках");
+
+        }
+
+        private void UpdateNoDispatchFlags(List<int> abonentsIds, List<DocflowsStatisticsData> docflowsStatistics)
+        {
+            foreach (var abonentId in abonentsIds)
+            {
+                var abonentProlongationShortData = _repository.GetAbonentProlongationShortData(abonentId);
+                var protocols = abonentProlongationShortData.SelectMany(p => p.Product.MercuryRecipients.Where(m => _protocols.Contains(m.Recipient.ProtocolId)).
+                     Select(k => k.Recipient.ProtocolId)).Distinct().ToList();
+
+                var abonentStatistics = docflowsStatistics.Where(p => abonentProlongationShortData.Select(s => s.Product.ProductGuid).Distinct().ToList().Contains(p.Guid)).ToList();
+                bool noDispatch = false;
+
+                foreach (var protocol in protocols)
+                {
+                    if (protocol == 13)
+                        if (!abonentStatistics.Any(p => p.Fns != 0))
+                        {
+                            noDispatch = true;
+                            break;
+                        }
+                    if (protocol == 2)
+                        if (!abonentStatistics.Any(p => p.Pfr != 0))
+                        {
+                            noDispatch = true;
+                            break;
+                        }
+                }
+
+                foreach (var abonentProlongationShortDatum in abonentProlongationShortData)
+                    abonentProlongationShortDatum.NoDispatch = noDispatch;
+
+            }
+            _dataEngine.SaveChanges();
+        }
+
+        private void UpdateOfdNoDispatchFlags(List<DocflowsStatisticsData> docflowsStatistics)
+        {
+            var ofd = docflowsStatistics.Where(x => x.HasOfdCashReport).Select(x => x.Guid).ToList();
+
+            if (!ofd.Any())
+                return;
+
+            foreach (var guid in ofd)
+            {
+                var prolongationShortDatum = _dataEngine.DataModel.ProlongationShortDatas.First(x => x.Product.ProductGuid == guid);
+                prolongationShortDatum.NoDispatch = true;
+            }
+
+            _dataEngine.SaveChanges();
+        }
+
     }
 }

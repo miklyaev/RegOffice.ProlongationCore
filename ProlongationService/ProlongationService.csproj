@@ -17,6 +17,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="7.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.7.0" />
     <PackageReference Include="Quartz.Extensions.Hosting" Version="3.7.0" />
   </ItemGroup>
@@ -25,9 +26,5 @@
     <ProjectReference Include="..\RegOffice.AstralLogger\RegOffice.AstralLogger.csproj" />
     <ProjectReference Include="..\RegOffice.DataModel\RegOffice.DataModel.csproj" />
     <ProjectReference Include="..\RegOffice.General\RegOffice.General.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Model\" />
   </ItemGroup>
 </Project>

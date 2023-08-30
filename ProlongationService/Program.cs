@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 using ProlongationService;
 using ProlongationService.Code;
+using ProlongationService.Services;
 using Quartz;
 using RegOffice.AstralLogger;
 using RegOffice.DataModel;
@@ -38,13 +39,13 @@ namespace ProlongationService
                 var scheduler = await schedulerFactory.GetScheduler();
 
                 var job = JobBuilder.Create<SchedulerService>()
-                    .WithIdentity("clickHouseJob", "group1")
+                    .WithIdentity("prolongationServiceJob", "group1")
                     .Build();
 
                 var trigger = TriggerBuilder.Create()
                     .WithIdentity("DailyTrigger", "group1")
                     .WithCronSchedule(_configuration["CronTrigger"])
-                    .ForJob("clickHouseJob", "group1")
+                    .ForJob("prolongationServiceJob", "group1")
                     .Build();
 
                 await scheduler.ScheduleJob(job, trigger);
@@ -81,6 +82,7 @@ namespace ProlongationService
                         .AddSingleton<IRepository, Repository>()
                         .AddSingleton<Manager>()
                         .AddSingleton<IJob, SchedulerService>()
+                        .AddScoped<IDocflowsStatisticsService, DocflowsStatisticsService>()
                         .AddQuartz(q =>
                         {
                             q.UseMicrosoftDependencyInjectionJobFactory();
