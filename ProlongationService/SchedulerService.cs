@@ -1,28 +1,55 @@
 ﻿using ProlongationService.Code;
 using Quartz;
+using RegOffice.AstralLogger;
+using RegOffice.DataModel;
 using ILogger = Serilog.ILogger;
 
 namespace ProlongationService
 {
     public class SchedulerService : IJob
     {
-        private readonly IConfiguration _configuration;
-        private readonly IServiceProvider _serviceProvider;
         private readonly ILogger _logger;
         private readonly Manager _manager;
-        public SchedulerService(IConfiguration configuration, Manager manager, IServiceProvider serviceProvider, ILogger logger)
-        {
-            _configuration = configuration;
-            _serviceProvider = serviceProvider;
+        private readonly IDataEngine _dataEngine;
+        public SchedulerService(Manager manager, IDataEngine dataEngine, ILogger logger)
+        { 
             _logger = logger;
             _manager = manager;
-
+            _dataEngine = dataEngine;
         }
         public async Task Execute(IJobExecutionContext context)
         {
             _logger.Information("Start SchedulerService");
 
-            await Task.Delay(5000);
+            bool updateNoDispach = DateTime.Now.Hour >= 0 && DateTime.Now.Hour < 2;
+
+            _dataEngine.SetTimeout(600);
+
+            if (!_dataEngine.Open())
+            {
+                _logger.Error("Ошибка подключения к базе данных RegOffice.");
+            }
+
+            try
+            {
+                var task1 = Task.Run(_manager.RemoveOutdatedProlongationData);
+                var task2 = Task.Run(_manager.RemoveUnactiveProductsData);
+                var task3 = Task.Run(_manager.RemoveTransferredProductsData);
+                await Task.WhenAll(task1, task2, task3);
+
+                _manager.ProcessProlongationShortData();
+
+                if (updateNoDispach)
+                {
+                    _manager.UpdateNoDispatchFlags(DateTime.Now.Day != 1);
+                }
+
+                _logger.Information("Stop SchedulerService");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "{ErrorMessage}", ExceptionFilter.GetMessage(ex));
+            }
         }
     }
 }
