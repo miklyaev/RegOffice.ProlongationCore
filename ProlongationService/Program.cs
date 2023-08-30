@@ -71,18 +71,18 @@ namespace ProlongationService
                     var postgresConnectionString = _configuration.GetSection("Postgres").GetValue<string>("ConnectionString");
 
                     services
-                        .AddHandlebarsScaffolding()
+                        //.AddHandlebarsScaffolding()
                         .AddSingleton<IAppLogger, AppLogger>()
                         .AddDbContextFactory<PostgreeSqlContext>(options =>
                         {
                             options.UseNpgsql(postgresConnectionString, o => o.CommandTimeout(600));
                         })
                         //.AddSingleton(new NpgsqlConnectionFactory(postgresConnectionString))
-                        .AddSingleton<IDataEngine, DataEngine>()
+                        //.AddSingleton<IDataEngine, DataEngine>()
                         .AddSingleton<IRepository, Repository>()
-                        .AddSingleton<Manager>()
+                        .AddSingleton<Manager>()                      
+                        .AddSingleton<IDocflowsStatisticsService, DocflowsStatisticsService>()
                         .AddSingleton<IJob, SchedulerService>()
-                        .AddScoped<IDocflowsStatisticsService, DocflowsStatisticsService>()
                         .AddQuartz(q =>
                         {
                             q.UseMicrosoftDependencyInjectionJobFactory();

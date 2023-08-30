@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 using ProlongationService.Containers;
 using RegOffice.DataModel;
 using RegOffice.DataModel.Model;
@@ -12,23 +13,38 @@ using System.Threading.Tasks;
 
 namespace ProlongationService.Code
 {
-    public class Repository : IRepository
+    public class Repository : IRepository, IDisposable
     {
-        private readonly IDataEngine _dataEngine;
+        //private readonly IDataEngine _dataEngine;
+        private readonly PostgreeSqlContext _context;
 
-        public Repository(IDataEngine dataEngine)
+        //public Repository(IDataEngine dataEngine)
+        //{
+        //    _dataEngine = dataEngine;
+        //}
+
+        public Repository(IDbContextFactory<PostgreeSqlContext> contextFactory)
         {
-            _dataEngine = dataEngine;
+            _context = contextFactory.CreateDbContext();
         }
 
+        public void Dispose()
+        {
+            _context.Dispose();
+        }
+
+        public PostgreeSqlContext GetContext()
+        {
+            return _context;
+        }
         public List<ProductProlongationData> ProlongationDataLinq(int agentId, int[] productTypeIds)
         {
             var sixMonthAgo = DateTime.Now.AddMonths(-6);
             var minDate = DateTime.MinValue;
             var steps = new[] { (int)StepTypeInfo.Locked, (int)StepTypeInfo.Revoked, (int)StepTypeInfo.Replaced };
-            var offices = _dataEngine.DataModel.Offices.Where(x => x.AgentId == agentId && x.OffTime == null).Select(x => x.OfficeId).ToArray();
+            var offices = _context.Offices.Where(x => x.AgentId == agentId && x.OffTime == null).Select(x => x.OfficeId).ToArray();
 
-            var products = _dataEngine.DataModel.Products.Where(x =>
+            var products = _context.Products.Where(x =>
                 offices.Contains(x.OfficeId) && productTypeIds.Contains(x.ProductTypeId) && x.Services.All(p => p.ServiceTypeId != (int)ServiceTypeInfo.ProductUnactive)).Select(x =>
                 new
                 {
@@ -42,13 +58,13 @@ namespace ProlongationService.Code
 
             var query = (
                 from pr in products
-                join ct in _dataEngine.DataModel.ContractTariffs on pr.ContractId equals ct.ContractId
-                from pt in _dataEngine.DataModel.ProductTariffs.Where(pt => pt.ContractTariffId == ct.ContractTariffId).DefaultIfEmpty()
-                from ta in _dataEngine.DataModel.TariffAttributes.Where(ta => ta.TariffId == ct.TariffId && ta.AttributeId == (int)TariffAttributeInfo.Transaction).DefaultIfEmpty()
-                from pp in _dataEngine.DataModel.ProductPeoples.Where(pp => pp.ProductId == pr.ProductId && pp.OffTime == null).DefaultIfEmpty()
-                from k in _dataEngine.DataModel.Keys.Where(k => k.KeyId == pp.KeyId).DefaultIfEmpty()
-                from cert in _dataEngine.DataModel.Certificates.Where(cert => cert.CertificateId == k.CertificateId).DefaultIfEmpty()
-                from ctExt in _dataEngine.DataModel.ContractTariffExtensions.Where(ext => ct.ContractTariffId == ext.ExtensionId).DefaultIfEmpty()
+                join ct in _context.ContractTariffs on pr.ContractId equals ct.ContractId
+                from pt in _context.ProductTariffs.Where(pt => pt.ContractTariffId == ct.ContractTariffId).DefaultIfEmpty()
+                from ta in _context.TariffAttributes.Where(ta => ta.TariffId == ct.TariffId && ta.AttributeId == (int)TariffAttributeInfo.Transaction).DefaultIfEmpty()
+                from pp in _context.ProductPeoples.Where(pp => pp.ProductId == pr.ProductId && pp.OffTime == null).DefaultIfEmpty()
+                from k in _context.Keys.Where(k => k.KeyId == pp.KeyId).DefaultIfEmpty()
+                from cert in _context.Certificates.Where(cert => cert.CertificateId == k.CertificateId).DefaultIfEmpty()
+                from ctExt in _context.ContractTariffExtensions.Where(ext => ct.ContractTariffId == ext.ExtensionId).DefaultIfEmpty()
                 let endDate = ct.EndDate.HasValue ? ct.EndDate.Value.ToDateTime(new TimeOnly(0, 0, 0)) : default
                 where
                     
@@ -90,7 +106,7 @@ namespace ProlongationService.Code
                 }).Distinct().ToList();
 
             return (from q in query
-                    from psd in _dataEngine.DataModel.ProlongationShortDatas.Where(psd =>
+                    from psd in _context.ProlongationShortDatas.Where(psd =>
                         psd.ProductId == q.ProductId &&
                         psd.AbonentId == q.AbonentId &&
                         psd.ContractId == q.ContractId &&
@@ -124,13 +140,13 @@ namespace ProlongationService.Code
         public List<ProlongationShortDatum> GetOutdatedProlongationData()
         {
             var splitDate = DateTime.Now.AddMonths(-6);
-            return _dataEngine.DataModel.ProlongationShortDatas.Where(p => TariffCertEndDateCondition(p, splitDate)).ToList();
+            return _context.ProlongationShortDatas.Where(p => TariffCertEndDateCondition(p, splitDate)).ToList();
         }
 
         public List<ProlongationShortDatum> GetUnactiveProlongationData()
         {
-            return (from prolongationShortData in _dataEngine.DataModel.ProlongationShortDatas
-                    join service in _dataEngine.DataModel.Services on prolongationShortData.ProductId equals
+            return (from prolongationShortData in _context.ProlongationShortDatas
+                    join service in _context.Services on prolongationShortData.ProductId equals
                         service.ProductId
                     where
                         service.ServiceTypeId == (int)ServiceTypeInfo.ProductUnactive
@@ -140,7 +156,7 @@ namespace ProlongationService.Code
         public List<ProlongationShortDatum> GetTransferredProlongationData()
         {
             return
-                _dataEngine.DataModel.ProlongationShortDatas
+                _context.ProlongationShortDatas
                     .Where(psd => psd.Product.ContractId != psd.ContractId || psd.Product.AbonentId != psd.AbonentId)
                     .ToList();
         }
@@ -162,13 +178,13 @@ namespace ProlongationService.Code
                 TariffInitialDate = psdInfo.TariffInitialDate.HasValue ? DateOnly.FromDateTime((DateTime)psdInfo.TariffInitialDate) : null,
                 CertificateInitialDate = psdInfo.CertificateInitialDate.HasValue ? DateOnly.FromDateTime((DateTime)psdInfo.CertificateInitialDate) : null,
             };
-            _dataEngine.DataModel.ProlongationShortDatas.Add(psdBase);
+            _context.ProlongationShortDatas.Add(psdBase);
             return psdBase;
         }
 
         public void RemoveProlongationShortDatum(ProlongationShortDatum prolongationShortDatum)
         {
-            _dataEngine.DataModel.ProlongationShortDatas.Remove(prolongationShortDatum);
+            _context.ProlongationShortDatas.Remove(prolongationShortDatum);
         }
 
         public ProlongationShortDatum UpdateProlongationShortDatum(ProlongationShortDatum psdBase, ProductProlongationData psdInfo)
@@ -192,20 +208,20 @@ namespace ProlongationService.Code
 
         public ProlongationShortDatum GetProlongationShortDatum(int productId, int contractId)
         {
-            return _dataEngine.DataModel.ProlongationShortDatas.SingleOrDefault(p => p.ProductId == productId && p.ContractId == contractId);
+            return _context.ProlongationShortDatas.SingleOrDefault(p => p.ProductId == productId && p.ContractId == contractId);
         }
 
         public List<ProlongationShortDatum> GetProlongationShortData(Guid productGuid)
         {
-            return _dataEngine.DataModel.ProlongationShortDatas.Where(p => p.Product.ProductGuid == productGuid).ToList();
+            return _context.ProlongationShortDatas.Where(p => p.Product.ProductGuid == productGuid).ToList();
         }
 
         public List<SummaryDifferenceData> GetSummaryDifference(int officeId)
         {
             var sixMonthsAgo = DateTime.Now.AddMonths(-6);
             return
-                (from psd in _dataEngine.DataModel.ProlongationShortDatas
-                 join c in _dataEngine.DataModel.Contracts on psd.ContractId equals c.ContractId
+                (from psd in _context.ProlongationShortDatas
+                 join c in _context.Contracts on psd.ContractId equals c.ContractId
 
                  where
                      c.OfficeId == officeId &&
@@ -229,7 +245,7 @@ namespace ProlongationService.Code
             var now = DateTime.Now;
             var nextMonth = DateTime.Now.AddMonths(1);
 
-            var agent = _dataEngine.DataModel.Agents.SingleOrDefault(x => x.AgentId == agentId);
+            var agent = _context.Agents.SingleOrDefault(x => x.AgentId == agentId);
 
             foreach (var officeId in agent.Offices.Where(x => !x.OffTime.HasValue).Select(x => x.OfficeId))
             {
@@ -241,7 +257,7 @@ namespace ProlongationService.Code
                 var riskGroup = RiskGroup(query, now);
                 var disabledDispatchCount = query.Count(x => x.IgnoreDispatch);
 
-                var existShortDataSummary = _dataEngine.DataModel.ProlongationShortDataSummaries.SingleOrDefault(x => x.OfficeId == officeId);
+                var existShortDataSummary = _context.ProlongationShortDataSummaries.SingleOrDefault(x => x.OfficeId == officeId);
                 if (existShortDataSummary != null)
                 {
                     existShortDataSummary.ExpiredInThisMonth = expiredInThisMonth;
@@ -253,7 +269,7 @@ namespace ProlongationService.Code
                 }
                 else
                 {
-                    _dataEngine.DataModel.ProlongationShortDataSummaries.Add(new ProlongationShortDataSummary
+                    _context.ProlongationShortDataSummaries.Add(new ProlongationShortDataSummary
                     {
                         OfficeId = officeId,
                         ExpiredInThisMonth = expiredInThisMonth,
@@ -264,7 +280,7 @@ namespace ProlongationService.Code
                         DisabledDispatchCount = disabledDispatchCount
                     });
                 }
-                _dataEngine.SaveChanges();
+                _context.SaveChanges();
             }
         }
 
@@ -310,19 +326,19 @@ namespace ProlongationService.Code
         public List<int> GetAbonentsIds()
         {
             var splitDate = DateTime.Now.AddDays(-90);
-            return _dataEngine.DataModel.ProlongationShortDatas.Where(p => (p.Product.ProductTypeId == 20 || p.TariffInitialDate.Value.ToDateTime(new TimeOnly(0, 0, 0)) < splitDate) && p.IgnoreDispatch == false).Select(p => p.AbonentId).Distinct().ToList();
+            return _context.ProlongationShortDatas.Where(p => (p.Product.ProductTypeId == 20 || p.TariffInitialDate.Value.ToDateTime(new TimeOnly(0, 0, 0)) < splitDate) && p.IgnoreDispatch == false).Select(p => p.AbonentId).Distinct().ToList();
         }
 
         public List<int> GetNoDispatchAbonentsIds()
         {
             var splitDate = DateTime.Now.AddDays(-90);
-            return _dataEngine.DataModel.ProlongationShortDatas.Where(p => (p.Product.ProductTypeId == 20 || p.TariffInitialDate.Value.ToDateTime(new TimeOnly(0, 0, 0)) < splitDate) && p.NoDispatch && p.IgnoreDispatch == false).
+            return _context.ProlongationShortDatas.Where(p => (p.Product.ProductTypeId == 20 || p.TariffInitialDate.Value.ToDateTime(new TimeOnly(0, 0, 0)) < splitDate) && p.NoDispatch && p.IgnoreDispatch == false).
                 Select(p => p.AbonentId).Distinct().ToList();
         }
 
         public Dictionary<Guid, int> GetAbonentsGuids(List<int> ids)
         {
-            return _dataEngine.DataModel.ProlongationShortDatas.Where(p => ids.Contains(p.AbonentId))
+            return _context.ProlongationShortDatas.Where(p => ids.Contains(p.AbonentId))
                 .Select(p => new { p.Product.ProductGuid, p.Product.ProductTypeId })
                 .Distinct()
                 .ToDictionary(k => k.ProductGuid, v => v.ProductTypeId);
@@ -330,7 +346,7 @@ namespace ProlongationService.Code
 
         public List<ProlongationShortDatum> GetAbonentProlongationShortData(int id)
         {
-            return _dataEngine.DataModel.ProlongationShortDatas.Where(p => p.AbonentId == id).ToList();
+            return _context.ProlongationShortDatas.Where(p => p.AbonentId == id).ToList();
         }
 
         public IEnumerable<int> GetProductAgents(int[] productTypeIds)
@@ -343,9 +359,9 @@ namespace ProlongationService.Code
             };
 
             return (
-                    from pr in _dataEngine.DataModel.Products
-                    join o in _dataEngine.DataModel.Offices on pr.OfficeId equals o.OfficeId
-                    join ag in _dataEngine.DataModel.Agents on o.AgentId equals ag.AgentId
+                    from pr in _context.Products
+                    join o in _context.Offices on pr.OfficeId equals o.OfficeId
+                    join ag in _context.Agents on o.AgentId equals ag.AgentId
                     where
                         !ag.OffTime.HasValue &&
                         !highLevelAgents.Contains(ag.LevelId) &&
@@ -435,7 +451,8 @@ namespace ProlongationService.Code
                         WHERE psd.prolongation_id is null";
 
 
-            return _dataEngine.ExecuteStoreQuery<ProductProlongationData>(query).ToList();
+            FormattableString formattableString = $"{query}";
+            return _context.Database.SqlQuery<ProductProlongationData>(formattableString).ToList();
         }
 
         public List<ProductProlongationData> GetProductsEpProlongationData()
@@ -499,8 +516,8 @@ LEFT JOIN
        psd.total_sum=updater.total_sum AND
        psd.registration_number = updater.registration_number
 WHERE psd.prolongation_id is null";
-
-            return _dataEngine.ExecuteStoreQuery<ProductProlongationData>(query).ToList();
+            FormattableString formattableString = $"{query}";
+            return _context.Database.SqlQuery<ProductProlongationData>(formattableString).ToList();
         }
 
         public List<ShortDataSummary> GetProlongationShortDataSummaryDifference()
@@ -622,8 +639,8 @@ WHERE psd.prolongation_id is null";
                             p.risk_group as RiskGroup,
                             p.disabled_dispatch_count as DisabledDispatchCount
                             from ro_prolongation_short_data_summary p";
-
-            return _dataEngine.ExecuteStoreQuery<ShortDataSummary>(query).ToList();
+            FormattableString formattableString = $"{query}";
+            return _context.Database.SqlQuery<ShortDataSummary>(formattableString).ToList();
         }
 
         public List<ShortDataSummary> GetProlongationShortDataSummaryToRemove()
@@ -747,7 +764,8 @@ WHERE psd.prolongation_id is null";
                             t4.ProlongateImmediate,
                             t5.RiskGroup,
                             t6.DisabledDispatchCount)";
-            return _dataEngine.ExecuteStoreQuery<ShortDataSummary>(query).ToList();
+            FormattableString formattableString = $"{query}";
+            return _context.Database.SqlQuery<ShortDataSummary>(formattableString).ToList();
         }
 
         #endregion

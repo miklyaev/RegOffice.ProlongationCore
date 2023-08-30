@@ -10,6 +10,7 @@ namespace ProlongationService.Code
 {
     public interface IRepository
     {
+        PostgreeSqlContext GetContext();
         List<ProductProlongationData> ProlongationDataLinq(int agentId, int[] products);
         List<ProductProlongationData> GetProductsProlongationData();
         List<ProductProlongationData> GetProductsEpProlongationData();

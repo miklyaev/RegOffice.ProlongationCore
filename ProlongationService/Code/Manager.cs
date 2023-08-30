@@ -16,17 +16,19 @@ namespace ProlongationService.Code
 {
     public class Manager
     {
-        private readonly IDataEngine _dataEngine;
+        //private readonly IDataEngine _dataEngine;
         private IRepository _repository;
+        private readonly PostgreeSqlContext _context;
         private readonly IAppLogger _logger;
         private readonly IDocflowsStatisticsService _docflowsStatisticsService;
 
-        public Manager(IRepository repository, IDocflowsStatisticsService docflowsStatisticsService, IDataEngine dataEngine, IAppLogger logger)
+        public Manager(IRepository repository, IDocflowsStatisticsService docflowsStatisticsService, IAppLogger logger)
         {
             _repository = repository;
             _logger = logger;
             _docflowsStatisticsService = docflowsStatisticsService;
-            _dataEngine = dataEngine;
+            //_dataEngine = dataEngine;
+            _context = repository.GetContext();
         }
 
         private readonly List<int> _protocols = new List<int> { 2, 13 };
@@ -53,7 +55,7 @@ namespace ProlongationService.Code
                 {
                     var prdata = _repository.ProlongationDataLinq(agentId, products);
 
-                    transaction = _dataEngine.BeginTransaction();
+                    transaction = _context.Database.BeginTransaction();
 
                     foreach (var psdInfo in prdata)
                     {
@@ -64,7 +66,7 @@ namespace ProlongationService.Code
                             ? _repository.AddProlongationShortDatum(psdInfo)
                             : _repository.UpdateProlongationShortDatum(psdBase, psdInfo);
 
-                        _dataEngine.SaveChanges();
+                        _context.SaveChanges();
                     }
 
                     _repository.UpdateShortDataSummary(agentId);
@@ -91,7 +93,7 @@ namespace ProlongationService.Code
                 _repository.RemoveProlongationShortDatum(outdatedProlongationDatum);
             }
 
-            _dataEngine.SaveChanges();
+            _context.SaveChanges();
         }
 
         public void RemoveUnactiveProductsData()
@@ -103,7 +105,7 @@ namespace ProlongationService.Code
                 _repository.RemoveProlongationShortDatum(unactiveProlongationDatum);
             }
 
-            _dataEngine.SaveChanges();
+            _context.SaveChanges();
         }
 
         public void RemoveTransferredProductsData()
@@ -115,7 +117,7 @@ namespace ProlongationService.Code
                 _repository.RemoveProlongationShortDatum(prolongationShortDatum);
             }
 
-            _dataEngine.SaveChanges();
+            _context.SaveChanges();
         }
 
         public void UpdateNoDispatchFlags(bool partial)
@@ -160,8 +162,8 @@ namespace ProlongationService.Code
 
                 if (counter % (_portionSize * 5) == 0)
                 {
-                    _dataEngine.Reopen();
-                    _repository = new Repository(_dataEngine);
+                    //_context.Reopen();
+                    //_repository = new Repository(_dataEngine);
                     _logger.Information("Обработка очередной порции данных завершена. Остаток: {abonentsIds.Count}.", abonentsIds.Count);
                 }
 
@@ -203,7 +205,7 @@ namespace ProlongationService.Code
                     abonentProlongationShortDatum.NoDispatch = noDispatch;
 
             }
-            _dataEngine.SaveChanges();
+            _context.SaveChanges();
         }
 
         private void UpdateOfdNoDispatchFlags(List<DocflowsStatisticsData> docflowsStatistics)
@@ -215,11 +217,11 @@ namespace ProlongationService.Code
 
             foreach (var guid in ofd)
             {
-                var prolongationShortDatum = _dataEngine.DataModel.ProlongationShortDatas.First(x => x.Product.ProductGuid == guid);
+                var prolongationShortDatum = _context.ProlongationShortDatas.First(x => x.Product.ProductGuid == guid);
                 prolongationShortDatum.NoDispatch = true;
             }
 
-            _dataEngine.SaveChanges();
+            _context.SaveChanges();
         }
 
     }

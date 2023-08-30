@@ -1,7 +1,9 @@
-﻿using ProlongationService.Code;
+﻿using Microsoft.EntityFrameworkCore;
+using ProlongationService.Code;
 using Quartz;
 using RegOffice.AstralLogger;
 using RegOffice.DataModel;
+using RegOffice.DataModel.Model;
 using ILogger = Serilog.ILogger;
 
 namespace ProlongationService
@@ -10,12 +12,16 @@ namespace ProlongationService
     {
         private readonly ILogger _logger;
         private readonly Manager _manager;
-        private readonly IDataEngine _dataEngine;
-        public SchedulerService(Manager manager, IDataEngine dataEngine, ILogger logger)
+        //private readonly IDataEngine _dataEngine;
+        //private readonly IRepository _repository;
+        private readonly PostgreeSqlContext _context;
+        public SchedulerService(Manager manager, IRepository repository, ILogger logger)
         { 
             _logger = logger;
             _manager = manager;
-            _dataEngine = dataEngine;
+            //_repository = repository;
+            _context = repository.GetContext();
+            //_dataEngine = dataEngine;
         }
         public async Task Execute(IJobExecutionContext context)
         {
@@ -23,12 +29,12 @@ namespace ProlongationService
 
             bool updateNoDispach = DateTime.Now.Hour >= 0 && DateTime.Now.Hour < 2;
 
-            _dataEngine.SetTimeout(600);
+            _context.Database.SetCommandTimeout(600);//SetTimeout(600);
 
-            if (!_dataEngine.Open())
-            {
-                _logger.Error("Ошибка подключения к базе данных RegOffice.");
-            }
+            //if (!_context.Open())
+            //{
+            //    _logger.Error("Ошибка подключения к базе данных RegOffice.");
+            //}
 
             try
             {
