@@ -71,7 +71,7 @@ namespace ProlongationService
                     var postgresConnectionString = _configuration.GetSection("Postgres").GetValue<string>("ConnectionString");
 
                     services
-                        //.AddHandlebarsScaffolding()
+                        .AddHandlebarsScaffolding() //необходим на стадии реверс инжиниринга, затем закомментировать
                         .AddSingleton<IAppLogger, AppLogger>()
                         .AddDbContextFactory<PostgreeSqlContext>(options =>
                         {

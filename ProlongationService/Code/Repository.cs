@@ -15,13 +15,7 @@ namespace ProlongationService.Code
 {
     public class Repository : IRepository, IDisposable
     {
-        //private readonly IDataEngine _dataEngine;
         private readonly PostgreeSqlContext _context;
-
-        //public Repository(IDataEngine dataEngine)
-        //{
-        //    _dataEngine = dataEngine;
-        //}
 
         public Repository(IDbContextFactory<PostgreeSqlContext> contextFactory)
         {
@@ -67,7 +61,7 @@ namespace ProlongationService.Code
                 from ctExt in _context.ContractTariffExtensions.Where(ext => ct.ContractTariffId == ext.ExtensionId).DefaultIfEmpty()
                 let endDate = ct.EndDate.HasValue ? ct.EndDate.Value.ToDateTime(new TimeOnly(0, 0, 0)) : default
                 where
-                    
+
                     ta == null &&
                     endDate > sixMonthAgo &&
                     !steps.Contains(ct.StepId) &&
@@ -136,7 +130,7 @@ namespace ProlongationService.Code
             DateTime? tariffEndDate = p.TariffEndDate.HasValue ? p.TariffEndDate.Value.ToDateTime(new TimeOnly(0, 0, 0)) : null;
             DateTime? certEndDate = p.CertificateEndDate.HasValue ? p.CertificateEndDate.Value.ToDateTime(new TimeOnly(0, 0, 0)) : null;
             return tariffEndDate < splitDate && certEndDate < splitDate;
-        } 
+        }
         public List<ProlongationShortDatum> GetOutdatedProlongationData()
         {
             var splitDate = DateTime.Now.AddMonths(-6);
@@ -197,7 +191,7 @@ namespace ProlongationService.Code
             psdBase.CertificateInitialDate = psdInfo.CertificateInitialDate.HasValue ? DateOnly.FromDateTime((DateTime)psdInfo.CertificateInitialDate) : null;
             psdBase.RegistrationNumber = psdInfo.RegistrationNumber;
 
-            if (psdBase.TariffEndDate?.ToDateTime(new TimeOnly(0,0,0)) > DateTime.Now)
+            if (psdBase.TariffEndDate?.ToDateTime(new TimeOnly(0, 0, 0)) > DateTime.Now)
             {
                 psdBase.ReasonId = null;
                 psdBase.Comment = null;

@@ -64,7 +64,7 @@ namespace RegOffice.DataModel.Model
             ProductTransferLogs = new HashSet<ProductTransferLog>();
             Products = new HashSet<Product>();
             RecipientUpdaters = new HashSet<RecipientUpdater>();
-            RefreshTokens = new HashSet<RefreshToken>();
+            RefreshTokens = new HashSet<RoRefreshToken>();
             RegBankRequestSteps = new HashSet<RegBankRequestStep>();
             RegBankRequests = new HashSet<RegBankRequest>();
             RegCertRequestSteps = new HashSet<RegCertRequestStep>();
@@ -247,7 +247,7 @@ namespace RegOffice.DataModel.Model
         public virtual ICollection<ProductTransferLog> ProductTransferLogs { get; set; }
         public virtual ICollection<Product> Products { get; set; }
         public virtual ICollection<RecipientUpdater> RecipientUpdaters { get; set; }
-        public virtual ICollection<RefreshToken> RefreshTokens { get; set; }
+        public virtual ICollection<RoRefreshToken> RefreshTokens { get; set; }
         public virtual ICollection<RegBankRequestStep> RegBankRequestSteps { get; set; }
         public virtual ICollection<RegBankRequest> RegBankRequests { get; set; }
         public virtual ICollection<RegCertRequestStep> RegCertRequestSteps { get; set; }

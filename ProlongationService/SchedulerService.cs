@@ -20,7 +20,7 @@ namespace ProlongationService
             _logger = logger;
             _manager = manager;
             //_repository = repository;
-            _context = repository.GetContext();
+           // _context = repository.GetContext();
             //_dataEngine = dataEngine;
         }
         public async Task Execute(IJobExecutionContext context)
@@ -38,19 +38,19 @@ namespace ProlongationService
 
             try
             {
-                var task1 = Task.Run(_manager.RemoveOutdatedProlongationData);
-                var task2 = Task.Run(_manager.RemoveUnactiveProductsData);
-                var task3 = Task.Run(_manager.RemoveTransferredProductsData);
-                await Task.WhenAll(task1, task2, task3);
+                //var task1 = Task.Run(_manager.RemoveOutdatedProlongationData);
+                //var task2 = Task.Run(_manager.RemoveUnactiveProductsData);
+                //var task3 = Task.Run(_manager.RemoveTransferredProductsData);
+                //await Task.WhenAll(task1, task2, task3);
 
-                _manager.ProcessProlongationShortData();
+                //_manager.ProcessProlongationShortData();
 
-                if (updateNoDispach)
-                {
-                    _manager.UpdateNoDispatchFlags(DateTime.Now.Day != 1);
-                }
+                //if (updateNoDispach)
+                //{
+                //    _manager.UpdateNoDispatchFlags(DateTime.Now.Day != 1);
+                //}
 
-                _logger.Information("Stop SchedulerService");
+                //_logger.Information("Stop SchedulerService");
             }
             catch (Exception ex)
             {

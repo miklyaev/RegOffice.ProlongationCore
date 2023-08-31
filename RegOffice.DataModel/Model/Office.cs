@@ -43,7 +43,6 @@ namespace RegOffice.DataModel.Model
             Regions = new HashSet<Region>();
             Users = new HashSet<User>();
             Schemes = new HashSet<AgentScheme>();
-            Users = new HashSet<User>();
         }
 
         public int OfficeId { get; set; }

@@ -27,7 +27,6 @@ namespace RegOffice.DataModel.Model
             ProxyAgents = new HashSet<ProxyAgent>();
             RegRequests = new HashSet<RegRequest>();
             SendedBills = new HashSet<SendedBill>();
-            CompanyGroups = new HashSet<CompanyGroup>();
         }
 
 

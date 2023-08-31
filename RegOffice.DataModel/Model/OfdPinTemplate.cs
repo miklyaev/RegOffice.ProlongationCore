@@ -9,7 +9,6 @@ namespace RegOffice.DataModel.Model
         {
             OfdPinTemplateLimits = new HashSet<OfdPinTemplateLimit>();
             OfdPins = new HashSet<OfdPin>();
-            OfdPins = new HashSet<OfdPin>();
         }
 
 

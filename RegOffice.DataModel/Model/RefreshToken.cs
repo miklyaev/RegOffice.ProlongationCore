@@ -6,7 +6,7 @@ namespace RegOffice.DataModel.Model
     /// <summary>
     /// Таблица токенов обновления
     /// </summary>
-    public partial class RefreshToken
+    public partial class RoRefreshToken
     {
 
         /// <summary>
@@ -22,7 +22,7 @@ namespace RegOffice.DataModel.Model
         /// <summary>
         /// Токен
         /// </summary>
-        public string RefreshTokenProp { get; set; }
+        public string RefreshToken { get; set; }
 
         /// <summary>
         /// Дата создания

@@ -16,8 +16,7 @@ namespace ProlongationService.Code
 {
     public class Manager
     {
-        //private readonly IDataEngine _dataEngine;
-        private IRepository _repository;
+        private readonly IRepository _repository;
         private readonly PostgreeSqlContext _context;
         private readonly IAppLogger _logger;
         private readonly IDocflowsStatisticsService _docflowsStatisticsService;
@@ -27,7 +26,6 @@ namespace ProlongationService.Code
             _repository = repository;
             _logger = logger;
             _docflowsStatisticsService = docflowsStatisticsService;
-            //_dataEngine = dataEngine;
             _context = repository.GetContext();
         }
 
