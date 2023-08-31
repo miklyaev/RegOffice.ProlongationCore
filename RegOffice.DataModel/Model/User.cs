@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace RegOffice.DataModel.Model
 {
@@ -189,6 +190,7 @@ namespace RegOffice.DataModel.Model
 
         public virtual Agent Agent { get; set; }
         public virtual Certificate Certificate { get; set; }
+        [NotMapped]
         public virtual Office OfficeWork { get; set; }
         public virtual Post Post { get; set; }
         public virtual Role le { get; set; }

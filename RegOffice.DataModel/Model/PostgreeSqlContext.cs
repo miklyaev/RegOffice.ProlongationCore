@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+using System.Net;
 
 namespace RegOffice.DataModel.Model
 {
@@ -6752,26 +6753,26 @@ namespace RegOffice.DataModel.Model
                     .OnDelete(DeleteBehavior.Restrict)
                     .HasConstraintName("fk_product_type");
 
-                entity.HasMany(d => d.Abonents)
-                    .WithMany(p => p.CompanyGroups)
-                    .UsingEntity<Dictionary<string, object>>(
-                        "RoCompanyGroupAbonent",
-                        l => l.HasOne<Abonent>().WithMany().HasForeignKey("AbonentId").HasConstraintName("fk_abonent"),
-                        r => r.HasOne<CompanyGroup>().WithMany().HasForeignKey("CompanyGroupId").HasConstraintName("fk_company_group"),
-                        j =>
-                        {
-                            j.HasKey("CompanyGroupId", "AbonentId").HasName("pk_company_group_abonent");
+                //entity.HasMany(d => d.Abonents)
+                //    .WithMany(p => p.CompanyGroups)
+                //    .UsingEntity<Dictionary<string, object>>(
+                //        "RoCompanyGroupAbonent",
+                //        l => l.HasOne<Abonent>().WithMany().HasForeignKey("AbonentId").HasConstraintName("fk_abonent"),
+                //        r => r.HasOne<CompanyGroup>().WithMany().HasForeignKey("CompanyGroupId").HasConstraintName("fk_company_group"),
+                //        j =>
+                //        {
+                //            j.HasKey("CompanyGroupId", "AbonentId").HasName("pk_company_group_abonent");
 
-                            j.ToTable("ro_company_group_abonent").HasAnnotation("Relational:Comment", "Таблица членов группы компаний");
+                //            j.ToTable("ro_company_group_abonent").HasAnnotation("Relational:Comment", "Таблица членов группы компаний");
 
-                            j.HasIndex(new[] { "AbonentId" }, "company_group_abonent_abonent_id_idx");
+                //            j.HasIndex(new[] { "AbonentId" }, "company_group_abonent_abonent_id_idx");
 
-                            j.HasIndex(new[] { "CompanyGroupId" }, "company_group_abonent_company_group_id_idx");
+                //            j.HasIndex(new[] { "CompanyGroupId" }, "company_group_abonent_company_group_id_idx");
 
-                            j.IndexerProperty<int>("CompanyGroupId").HasColumnName("company_group_id").HasComment("Группа компаний");
+                //            j.IndexerProperty<int>("CompanyGroupId").HasColumnName("company_group_id").HasComment("Группа компаний");
 
-                            j.IndexerProperty<int>("AbonentId").HasColumnName("abonent_id").HasComment("Компания");
-                        });
+                //            j.IndexerProperty<int>("AbonentId").HasColumnName("abonent_id").HasComment("Компания");
+                //        });
             });
 
             modelBuilder.Entity<CompetencyCenterReward>(entity =>
@@ -7420,26 +7421,26 @@ namespace RegOffice.DataModel.Model
                             j.IndexerProperty<int>("KeyId").HasColumnName("key_id").HasComment("Ключ");
                         });
 
-                entity.HasMany(d => d.Products)
-                    .WithMany(p => p.ContractTariffs)
-                    .UsingEntity<Dictionary<string, object>>(
-                        "RoProductTariff",
-                        l => l.HasOne<Product>().WithMany().HasForeignKey("ProductId").HasConstraintName("fk_product"),
-                        r => r.HasOne<ContractTariff>().WithMany().HasForeignKey("ContractTariffId").HasConstraintName("fk_contract_tariff"),
-                        j =>
-                        {
-                            j.HasKey("ContractTariffId", "ProductId").HasName("pk_product_tariff");
+                //entity.HasMany(d => d.Products)
+                //    .WithMany(p => p.ContractTariffs)
+                //    .UsingEntity<Dictionary<string, object>>(
+                //        "ProductTariff",
+                //        l => l.HasOne<Product>().WithMany().HasForeignKey("ProductId").HasConstraintName("fk_product"),
+                //        r => r.HasOne<ContractTariff>().WithMany().HasForeignKey("ContractTariffId").HasConstraintName("fk_contract_tariff"),
+                //        j =>
+                //        {
+                //            j.HasKey("ContractTariffId", "ProductId").HasName("pk_product_tariff");
 
-                            j.ToTable("ro_product_tariff").HasAnnotation("Relational:Comment", "Таблица услуг продукта");
+                //            j.ToTable("ro_product_tariff").HasAnnotation("Relational:Comment", "Таблица услуг продукта");
 
-                            j.HasIndex(new[] { "ContractTariffId" }, "product_tariff_contract_tariff_id_idx");
+                //            j.HasIndex(new[] { "ContractTariffId" }, "product_tariff_contract_tariff_id_idx");
 
-                            j.HasIndex(new[] { "ProductId" }, "product_tariff_product_id_idx");
+                //            j.HasIndex(new[] { "ProductId" }, "product_tariff_product_id_idx");
 
-                            j.IndexerProperty<int>("ContractTariffId").HasColumnName("contract_tariff_id").HasComment("Услуга по договору");
+                //            j.IndexerProperty<int>("ContractTariffId").HasColumnName("contract_tariff_id").HasComment("Услуга по договору");
 
-                            j.IndexerProperty<int>("ProductId").HasColumnName("product_id").HasComment("Продукт");
-                        });
+                //            j.IndexerProperty<int>("ProductId").HasColumnName("product_id").HasComment("Продукт");
+                //        });
             });
 
             modelBuilder.Entity<ContractTariffDiscount>(entity =>
@@ -9892,6 +9893,9 @@ namespace RegOffice.DataModel.Model
 
                 entity.HasIndex(e => new { e.IpAddress, e.ServerId }, "sk_ip_server")
                     .IsUnique();
+                entity.Property(e => e.IpAddress)
+                    .HasConversion(v => v.ToString(),
+                                   v => IPAddress.Parse(v));
 
                 entity.Property(e => e.IpId)
                     .HasColumnName("ip_id")
@@ -14003,22 +14007,22 @@ namespace RegOffice.DataModel.Model
                     .OnDelete(DeleteBehavior.SetNull)
                     .HasConstraintName("fk_ro_ofd_pin_unit_id");
 
-                entity.HasMany(d => d.OfdPinTemplates)
-                    .WithMany(p => p.OfdPins)
-                    .UsingEntity<Dictionary<string, object>>(
-                        "RoOfdPinTemplateId",
-                        l => l.HasOne<OfdPinTemplate>().WithMany().HasForeignKey("OfdPinTemplateId").OnDelete(DeleteBehavior.Restrict).HasConstraintName("ro_ofd_pin_template_id_fk1"),
-                        r => r.HasOne<OfdPin>().WithMany().HasForeignKey("OfdPinId").OnDelete(DeleteBehavior.Restrict).HasConstraintName("ro_ofd_pin_template_id_fk"),
-                        j =>
-                        {
-                            j.HasKey("OfdPinId", "OfdPinTemplateId").HasName("ro_ofd_pin_template_id_pkey");
+                //entity.HasMany(d => d.OfdPinTemplates)
+                //    .WithMany(p => p.OfdPins)
+                //    .UsingEntity<Dictionary<string, object>>(
+                //        "RoOfdPinTemplateId",
+                //        l => l.HasOne<OfdPinTemplate>().WithMany().HasForeignKey("OfdPinTemplateId").OnDelete(DeleteBehavior.Restrict).HasConstraintName("ro_ofd_pin_template_id_fk1"),
+                //        r => r.HasOne<OfdPin>().WithMany().HasForeignKey("OfdPinId").OnDelete(DeleteBehavior.Restrict).HasConstraintName("ro_ofd_pin_template_id_fk"),
+                //        j =>
+                //        {
+                //            j.HasKey("OfdPinId", "OfdPinTemplateId").HasName("ro_ofd_pin_template_id_pkey");
 
-                            j.ToTable("ro_ofd_pin_template_id");
+                //            j.ToTable("ro_ofd_pin_template_id");
 
-                            j.IndexerProperty<int>("OfdPinId").HasColumnName("ofd_pin_id").HasComment("Ид. пин кода");
+                //            j.IndexerProperty<int>("OfdPinId").HasColumnName("ofd_pin_id").HasComment("Ид. пин кода");
 
-                            j.IndexerProperty<Guid>("OfdPinTemplateId").HasColumnName("ofd_pin_template_id").HasComment("Ид. шаблона");
-                        });
+                //            j.IndexerProperty<Guid>("OfdPinTemplateId").HasColumnName("ofd_pin_template_id").HasComment("Ид. шаблона");
+                //        });
             });
 
             modelBuilder.Entity<OfdPinSetting>(entity =>
@@ -26824,10 +26828,10 @@ namespace RegOffice.DataModel.Model
                     .OnDelete(DeleteBehavior.SetNull)
                     .HasConstraintName("fk_certificate");
 
-                entity.HasOne(d => d.OfficeWork)
-                    .WithMany(p => p.Users)
-                    .HasForeignKey(d => d.OfficeWorkId)
-                    .HasConstraintName("fk_office");
+                //entity.HasOne(d => d.OfficeWork)
+                //    .WithMany(p => p.Users)
+                //    .HasForeignKey(d => d.OfficeWorkId)
+                //    .HasConstraintName("fk_office");
 
                 entity.HasOne(d => d.Post)
                     .WithMany(p => p.Users)

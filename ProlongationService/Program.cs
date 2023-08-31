@@ -25,7 +25,7 @@ namespace ProlongationService
 
         private static async Task Main(string[] args)
         {
-            //глобальный логгер, который реагирует на не запуск приложения
+            //РіР»РѕР±Р°Р»СЊРЅС‹Р№ Р»РѕРіРіРµСЂ, РєРѕС‚РѕСЂС‹Р№ СЂРµР°РіРёСЂСѓРµС‚ РЅР° РЅРµ Р·Р°РїСѓСЃРє РїСЂРёР»РѕР¶РµРЅРёСЏ
             AppLoggerExtensions.CreateGlobalLogger(_configuration);
 
             try
@@ -33,7 +33,7 @@ namespace ProlongationService
 
                 CultureInfo.CurrentCulture = new CultureInfo("ru-RU");
 
-                AppLoggerExtensions.Information("Запуск сервиса ProlongationService");
+                AppLoggerExtensions.Information("Р—Р°РїСѓСЃРє СЃРµСЂРІРёСЃР° ProlongationService");
                 IHost host = CreateHostBuilder(args).Build();
                 var schedulerFactory = host.Services.GetRequiredService<ISchedulerFactory>();
                 var scheduler = await schedulerFactory.GetScheduler();
@@ -55,11 +55,11 @@ namespace ProlongationService
             }
             catch (Exception ex)
             {
-                AppLoggerExtensions.Fatal(ex, "Критическая ошибка сервиса ProlongationService");
+                AppLoggerExtensions.Fatal(ex, "РљСЂРёС‚РёС‡РµСЃРєР°СЏ РѕС€РёР±РєР° СЃРµСЂРІРёСЃР° ProlongationService");
             }
             finally
             {
-                AppLoggerExtensions.Information("Остановка сервиса ProlongationService");
+                AppLoggerExtensions.Information("РћСЃС‚Р°РЅРѕРІРєР° СЃРµСЂРІРёСЃР° ProlongationService");
                 AppLoggerExtensions.CloseAndFlush();
             }
         }
@@ -71,14 +71,12 @@ namespace ProlongationService
                     var postgresConnectionString = _configuration.GetSection("Postgres").GetValue<string>("ConnectionString");
 
                     services
-                        .AddHandlebarsScaffolding() //необходим на стадии реверс инжиниринга, затем закомментировать
+                        //.AddHandlebarsScaffolding() //РЅРµРѕР±С…РѕРґРёРј РЅР° СЃС‚Р°РґРёРё СЂРµРІРµСЂСЃ РёРЅР¶РµРЅРёСЂРёРЅРіР°, Р·Р°С‚РµРј Р·Р°РєРѕРјРјРµРЅС‚РёСЂРѕРІР°С‚СЊ
                         .AddSingleton<IAppLogger, AppLogger>()
                         .AddDbContextFactory<PostgreeSqlContext>(options =>
                         {
                             options.UseNpgsql(postgresConnectionString, o => o.CommandTimeout(600));
                         })
-                        //.AddSingleton(new NpgsqlConnectionFactory(postgresConnectionString))
-                        //.AddSingleton<IDataEngine, DataEngine>()
                         .AddSingleton<IRepository, Repository>()
                         .AddSingleton<Manager>()                      
                         .AddSingleton<IDocflowsStatisticsService, DocflowsStatisticsService>()
