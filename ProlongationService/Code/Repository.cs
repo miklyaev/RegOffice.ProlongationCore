@@ -61,11 +61,10 @@ namespace ProlongationService.Code
                 from k in _context.Keys.Where(k => k.KeyId == pp.KeyId).DefaultIfEmpty()
                 from cert in _context.Certificates.Where(cert => cert.CertificateId == k.CertificateId).DefaultIfEmpty()
                 from ctExt in _context.ContractTariffExtensions.Where(ext => ct.ContractTariffId == ext.ExtensionId).DefaultIfEmpty()
-                let endDate = ct.EndDate.HasValue ? ct.EndDate.Value.ToDateTime(new TimeOnly(0, 0, 0)) : default
                 where
 
                     ta == null &&
-                    endDate > sixMonthAgo &&
+                    ct.EndDate > DateOnly.FromDateTime(sixMonthAgo) &&
                     !steps.Contains(ct.StepId) &&
                     (productTypeIds.Contains(pp.ProductTypeId) || pr.ProductTypeId == (int)ProductTypeInfo.Sedna) &&
                     (pt == null && pr.ProxyAgentId == null || pt.ProductId == pr.ProductId)
@@ -96,8 +95,8 @@ namespace ProlongationService.Code
                     ContractId = grp.Key.ContractId,
                     TariffInitialDate = ctsBase.TariffInitialDate.ToDateTime(new TimeOnly(0, 0, 0)),
                     TariffEndDate = ctsBase.TariffEndDate.HasValue ? ctsBase.TariffEndDate.Value.ToDateTime(new TimeOnly(0, 0, 0)) : default,
-                    CertificateInitialDate = cts.FirstOrDefault() != null ? cts.FirstOrDefault().CertificateInitialDate.Date : default,
-                    CertificateEndDate = cts.FirstOrDefault() != null ? cts.FirstOrDefault().CertificateEndDate.Date : default,
+                    CertificateInitialDate = cts.FirstOrDefault() != null ? cts.FirstOrDefault().CertificateInitialDate : default,
+                    CertificateEndDate = cts.FirstOrDefault() != null ? cts.FirstOrDefault().CertificateEndDate : default,
                     TotalSum = cts.Sum(x => x.TotalSum),
                 }).Distinct().ToList();
 
@@ -106,8 +105,8 @@ namespace ProlongationService.Code
                         psd.ProductId == q.ProductId &&
                         psd.AbonentId == q.AbonentId &&
                         psd.ContractId == q.ContractId &&
-                        (psd.TariffEndDate.HasValue ? psd.TariffEndDate.Value.ToDateTime(new TimeOnly(0, 0, 0)) : minDate) == (q.TariffEndDate ?? minDate) &&
-                        (psd.CertificateEndDate.HasValue ? psd.CertificateEndDate.Value.ToDateTime(new TimeOnly(0, 0, 0)) : minDate) == (q.CertificateEndDate ?? minDate) &&
+                        (psd.TariffEndDate ?? DateOnly.FromDateTime(minDate)) == DateOnly.FromDateTime(q.TariffEndDate ?? minDate) &&
+                        (psd.CertificateEndDate ?? DateOnly.FromDateTime(minDate)) == DateOnly.FromDateTime(q.CertificateEndDate ?? minDate) &&
                         psd.TotalSum == q.TotalSum &&
                         (psd.RegistrationNumber ?? string.Empty) == (q.RegistrationNumber ?? string.Empty)
                     ).DefaultIfEmpty()
