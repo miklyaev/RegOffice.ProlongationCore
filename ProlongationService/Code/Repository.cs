@@ -94,10 +94,10 @@ namespace ProlongationService.Code
                     RegistrationNumber = grp.Key.RegistrationNumber,
                     ContractId = grp.Key.ContractId,
                     TariffInitialDate = ctsBase.TariffInitialDate.ToDateTime(new TimeOnly(0, 0, 0)),
-                    TariffEndDate = ctsBase.TariffEndDate.HasValue ? ctsBase.TariffEndDate.Value.ToDateTime(new TimeOnly(0, 0, 0)) : default,
-                    CertificateInitialDate = cts.FirstOrDefault() != null ? cts.FirstOrDefault().CertificateInitialDate : default,
-                    CertificateEndDate = cts.FirstOrDefault() != null ? cts.FirstOrDefault().CertificateEndDate : default,
-                    TotalSum = cts.Sum(x => x.TotalSum),
+                    TariffEndDate = ctsBase.TariffEndDate.Value.ToDateTime(new TimeOnly(0, 0, 0)),
+                    CertificateInitialDate = cts.FirstOrDefault().CertificateInitialDate,
+                    CertificateEndDate = cts.FirstOrDefault().CertificateEndDate,
+                    TotalSum = cts.Sum(x => x.TotalSum)
                 }).Distinct().ToList();
 
             return (from q in query
