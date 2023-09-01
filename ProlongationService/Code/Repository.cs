@@ -6,8 +6,10 @@ using RegOffice.DataModel.Model;
 using RegOffice.General.Enums;
 using RegOffice.General.Models;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -124,17 +126,11 @@ namespace ProlongationService.Code
                         TotalSum = q.TotalSum
                     }).Distinct().ToList();
         }
-
-        private bool TariffCertEndDateCondition(ProlongationShortDatum p, DateTime splitDate)
-        {
-            DateTime? tariffEndDate = p.TariffEndDate.HasValue ? p.TariffEndDate.Value.ToDateTime(new TimeOnly(0, 0, 0)) : null;
-            DateTime? certEndDate = p.CertificateEndDate.HasValue ? p.CertificateEndDate.Value.ToDateTime(new TimeOnly(0, 0, 0)) : null;
-            return tariffEndDate < splitDate && certEndDate < splitDate;
-        }
+        
         public List<ProlongationShortDatum> GetOutdatedProlongationData()
         {
-            var splitDate = DateTime.Now.AddMonths(-6);
-            return _context.ProlongationShortDatas.Where(p => TariffCertEndDateCondition(p, splitDate)).ToList();
+            var splitDate = DateTime.Now.AddMonths(-6);         
+            return _context.ProlongationShortDatas.Where(p => p.TariffEndDate < DateOnly.FromDateTime(splitDate) && p.CertificateEndDate < DateOnly.FromDateTime(splitDate)).ToList();
         }
 
         public List<ProlongationShortDatum> GetUnactiveProlongationData()
@@ -761,6 +757,7 @@ WHERE psd.prolongation_id is null";
             FormattableString formattableString = $"{query}";
             return _context.Database.SqlQuery<ShortDataSummary>(formattableString).ToList();
         }
+
 
         #endregion
 

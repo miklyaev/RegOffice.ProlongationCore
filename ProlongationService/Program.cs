@@ -44,7 +44,11 @@ namespace ProlongationService
 
                 var trigger = TriggerBuilder.Create()
                     .WithIdentity("DailyTrigger", "group1")
+#if DEBUG
+                    .StartNow()
+#else
                     .WithCronSchedule(_configuration["CronTrigger"])
+#endif
                     .ForJob("prolongationServiceJob", "group1")
                     .Build();
 
