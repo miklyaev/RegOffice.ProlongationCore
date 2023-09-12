@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
+using Microsoft.EntityFrameworkCore.Storage.Internal;
 using ProlongationService.Containers;
 using RegOffice.DataModel;
 using RegOffice.DataModel.Model;
@@ -10,6 +11,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -21,7 +23,7 @@ namespace ProlongationService.Code
 
         public Repository(IDbContextFactory<PostgreeSqlContext> contextFactory)
         {
-            _context = contextFactory.CreateDbContext();
+            _context = contextFactory.CreateDbContext();            
         }
 
         public void Dispose()
@@ -35,97 +37,91 @@ namespace ProlongationService.Code
         }
         public List<ProductProlongationData> ProlongationDataLinq(int agentId, int[] productTypeIds)
         {
-            var sixMonthAgo = DateTime.Now.AddMonths(-6);
-            var minDate = DateTime.MinValue;
-            var steps = new[] { (int)StepTypeInfo.Locked, (int)StepTypeInfo.Revoked, (int)StepTypeInfo.Replaced };
-            var offices = _context.Offices.Where(x => x.AgentId == agentId && x.OffTime == null).Select(x => x.OfficeId).ToArray();
+            var sixMonthAgoDt = DateTime.Now.AddMonths(-6);
+            //var minDate = DateTime.MinValue;
+            //var steps = new[] { (int)StepTypeInfo.Locked, (int)StepTypeInfo.Revoked, (int)StepTypeInfo.Replaced };
+            string strProductTypeIds = string.Join(",", productTypeIds.Select(x => x));
 
-            var products = _context.Products.Where(x =>
-                offices.Contains(x.OfficeId) && productTypeIds.Contains(x.ProductTypeId) && x.Services.All(p => p.ServiceTypeId != (int)ServiceTypeInfo.ProductUnactive)).Select(x =>
-                new
-                {
-                    x.ProductId,
-                    x.ProductTypeId,
-                    x.ContractId,
-                    x.AbonentId,
-                    x.ProxyAgentId,
-                    x.RegistrationNumber
-                });
+            var query = $@"select 
+            t2.ProductId as ProductId
+            , t2.AbonentId as AbonentId
+            , t2.ContractId as ContractId
+            , t2.RegistrationNumber as RegistrationNumber
+            , t2.TariffInitialDate as TariffInitialDate
+            , t2.TotalSum as TotalSum
+            , t2.TariffEndDate as TariffEndDate
+            , t2.CertificateInitialDate as CertificateInitialDate
+            , t2.CertificateEndDate as CertificateEndDate
+            from
+            (
+            select
+            t.product_id as ProductId
+            , t.abonent_id as AbonentId
+            , t.contract_id as ContractId
+            , t.registration_number as RegistrationNumber
+            , t.initial_date as TariffInitialDate
+            , sum(t.sum) over(partition by t.product_id, t.abonent_id, t.contract_id, t.registration_number) as TotalSum
+            , row_number() over(partition by t.product_id, t.abonent_id, t.contract_id, t.registration_number) as n
+            , t.TariffEndDate
+            , t.initial_time as CertificateInitialDate
+            , t.end_time as CertificateEndDate
+            , t.isBaseLicence
+            from 
+            (
+            select
+            rp.product_id 
+            , rp.abonent_id
+            , rp.contract_id
+            , rp.registration_number
+            , max(rct.end_date) over(partition by rp.product_id, rp.abonent_id, rp.contract_id, rp.registration_number order by rct.end_date desc) as TariffEndDate
+            , rct.sum
+            , rct.initial_date
+            , rc.initial_time
+            , rc.end_time
+            , case when ext.extension_id is null then true else false END as isBaseLicence
 
-            var query = (
-                from pr in products
-                join ct in _context.ContractTariffs on pr.ContractId equals ct.ContractId
-                from pt in _context.ProductTariffs.Where(pt => pt.ContractTariffId == ct.ContractTariffId).DefaultIfEmpty()
-                from ta in _context.TariffAttributes.Where(ta => ta.TariffId == ct.TariffId && ta.AttributeId == (int)TariffAttributeInfo.Transaction).DefaultIfEmpty()
-                from pp in _context.ProductPeoples.Where(pp => pp.ProductId == pr.ProductId && pp.OffTime == null).DefaultIfEmpty()
-                from k in _context.Keys.Where(k => k.KeyId == pp.KeyId).DefaultIfEmpty()
-                from cert in _context.Certificates.Where(cert => cert.CertificateId == k.CertificateId).DefaultIfEmpty()
-                from ctExt in _context.ContractTariffExtensions.Where(ext => ct.ContractTariffId == ext.ExtensionId).DefaultIfEmpty()
-                where
+            from ro_product rp 
+            join ro_contract_tariff rct on rct.contract_id = rp.contract_id
+            left join ro_product_tariff rpt on rpt.contract_tariff_id = rct.contract_tariff_id
+            left join ro_tariff_attribute rta on rta.tariff_id = rct.tariff_id and rta.attribute_id = 29
+            left join ro_product_person rpp on rpp.product_id = rp.product_id and rpp.off_time is null 
+            left join ro_key k on k.key_id = rpp.key_id
+            left join ro_certificate rc on rc.certificate_id = k.certificate_id
+            left join ro_contract_tariff_extension ext on ext.contract_tariff_id = rct.contract_tariff_id
+            where
+            rta.tariff_attribute_id is null
+            and ext.contract_tariff_id is null
+            and rct.end_date > '{sixMonthAgoDt.ToString("yyyy-MM-dd")}'
+            and rct.step_id not in (4, 55, 56)
+            and (rpp.product_type_id in ({strProductTypeIds}) or rpp.product_type_id = 20)
+            and (rpt.contract_tariff_id is null and rp.proxy_agent_id is null or rpt.product_id = rp.product_id )
+            and rp.office_id in
+	            (
+	            select ro.office_id
+	            from ro_office ro 
+	            where ro.agent_id = {agentId} and ro.off_time is null
+	            )
+            and rp.product_type_id in ({strProductTypeIds})
+            and not exists
+	            (
+	            select rs.service_id
+	            from ro_service rs
+	            join ro_office ro2 on ro2.office_id = rp.office_id 
+	            where rs.product_id = rp.product_id
+	            and rs.service_type_id = 15
+	            )
+	
+            ) t
+            where t.isBaseLicence = true
+            ) t2
 
-                    ta == null &&
-                    ct.EndDate > DateOnly.FromDateTime(sixMonthAgo) &&
-                    !steps.Contains(ct.StepId) &&
-                    (productTypeIds.Contains(pp.ProductTypeId) || pr.ProductTypeId == (int)ProductTypeInfo.Sedna) &&
-                    (pt == null && pr.ProxyAgentId == null || pt.ProductId == pr.ProductId)
-                group new
-                {
-                    TariffInitialDate = ct.InitialDate,
-                    TariffEndDate = ct.EndDate,
-                    CertificateInitialDate = cert.InitialTime,
-                    CertificateEndDate = cert.EndTime,
-                    TotalSum = ct.Sum,
-                    isBaseLicence = ctExt == null
-                }
-                    by new
-                    {
-                        pr.ProductId,
-                        pr.AbonentId,
-                        pr.RegistrationNumber,
-                        ct.ContractId,
-                    }
-                into grp
-                let cts = grp.Where(x => x.TariffEndDate == grp.Max(y => y.TariffEndDate))
-                let ctsBase = grp.Where(x => x.isBaseLicence).OrderByDescending(x => x.TariffEndDate).FirstOrDefault()
-                select new ProductProlongationData
-                {
-                    ProductId = grp.Key.ProductId,
-                    AbonentId = grp.Key.AbonentId,
-                    RegistrationNumber = grp.Key.RegistrationNumber,
-                    ContractId = grp.Key.ContractId,
-                    TariffInitialDate = ctsBase.TariffInitialDate.ToDateTime(new TimeOnly(0, 0, 0)),
-                    TariffEndDate = ctsBase.TariffEndDate.Value.ToDateTime(new TimeOnly(0, 0, 0)),
-                    CertificateInitialDate = cts.FirstOrDefault().CertificateInitialDate,
-                    CertificateEndDate = cts.FirstOrDefault().CertificateEndDate,
-                    TotalSum = cts.Sum(x => x.TotalSum)
-                }).Distinct().ToList();
+            where t2.n = 1";
 
-            return (from q in query
-                    from psd in _context.ProlongationShortDatas.Where(psd =>
-                        psd.ProductId == q.ProductId &&
-                        psd.AbonentId == q.AbonentId &&
-                        psd.ContractId == q.ContractId &&
-                        (psd.TariffEndDate ?? DateOnly.FromDateTime(minDate)) == DateOnly.FromDateTime(q.TariffEndDate ?? minDate) &&
-                        (psd.CertificateEndDate ?? DateOnly.FromDateTime(minDate)) == DateOnly.FromDateTime(q.CertificateEndDate ?? minDate) &&
-                        psd.TotalSum == q.TotalSum &&
-                        (psd.RegistrationNumber ?? string.Empty) == (q.RegistrationNumber ?? string.Empty)
-                    ).DefaultIfEmpty()
-                    where
-                        psd == null
-                    select new ProductProlongationData
-                    {
-                        ProductId = q.ProductId,
-                        AbonentId = q.AbonentId,
-                        RegistrationNumber = q.RegistrationNumber,
-                        ContractId = q.ContractId,
-                        TariffInitialDate = q.TariffInitialDate,
-                        TariffEndDate = q.TariffEndDate,
-                        CertificateInitialDate = q.CertificateInitialDate,
-                        CertificateEndDate = q.CertificateEndDate,
-                        TotalSum = q.TotalSum
-                    }).Distinct().ToList();
+            FormattableString formattableString = $"{query}";
+            var result = _context.ProlongationShortDatas.FromSql(formattableString);
+            return null;// _context.ProlongationShortDatas.FromSql(formattableString);//Database.SqlQuery<ProductProlongationData>(formattableString).ToList();
         }
-        
+
         public List<ProlongationShortDatum> GetOutdatedProlongationData()
         {
             var splitDate = DateTime.Now.AddMonths(-6);         
