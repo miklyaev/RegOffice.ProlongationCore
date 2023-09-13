@@ -1,5 +1,6 @@
 ﻿using ProlongationService.Containers;
 using RegOffice.DataModel.Model;
+using RegOffice.DataModel.Model.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;

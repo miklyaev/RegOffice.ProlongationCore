@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore.Storage.Internal;
 using ProlongationService.Containers;
 using RegOffice.DataModel;
 using RegOffice.DataModel.Model;
+using RegOffice.DataModel.Model.Entities;
 using RegOffice.General.Enums;
 using RegOffice.General.Models;
 using System;
@@ -125,7 +126,7 @@ namespace ProlongationService.Code
         public List<ProlongationShortDatum> GetOutdatedProlongationData()
         {
             var splitDate = DateTime.Now.AddMonths(-6);         
-            return _context.ProlongationShortDatas.Where(p => p.TariffEndDate < DateOnly.FromDateTime(splitDate) && p.CertificateEndDate < DateOnly.FromDateTime(splitDate)).ToList();
+            return _context.ProlongationShortDatas.Where(p => p.TariffEndDate < splitDate && p.CertificateEndDate < splitDate).ToList();
         }
 
         public List<ProlongationShortDatum> GetUnactiveProlongationData()
@@ -154,14 +155,14 @@ namespace ProlongationService.Code
                 ContractId = psdInfo.ContractId,
                 ProductId = psdInfo.ProductId,
 
-                TariffEndDate = psdInfo.TariffEndDate.HasValue ? DateOnly.FromDateTime((DateTime)psdInfo.TariffEndDate) : null,
-                CertificateEndDate = psdInfo.CertificateEndDate.HasValue ? DateOnly.FromDateTime((DateTime)psdInfo.CertificateEndDate) : null,
+                TariffEndDate = psdInfo.TariffEndDate.HasValue ? psdInfo.TariffEndDate : null,
+                CertificateEndDate = psdInfo.CertificateEndDate.HasValue ? psdInfo.CertificateEndDate : null,
 
                 TotalSum = psdInfo.TotalSum,
                 RegistrationNumber = psdInfo.RegistrationNumber,
 
-                TariffInitialDate = psdInfo.TariffInitialDate.HasValue ? DateOnly.FromDateTime((DateTime)psdInfo.TariffInitialDate) : null,
-                CertificateInitialDate = psdInfo.CertificateInitialDate.HasValue ? DateOnly.FromDateTime((DateTime)psdInfo.CertificateInitialDate) : null,
+                TariffInitialDate = psdInfo.TariffInitialDate.HasValue ? psdInfo.TariffInitialDate : null,
+                CertificateInitialDate = psdInfo.CertificateInitialDate.HasValue ? psdInfo.CertificateInitialDate : null,
             };
             _context.ProlongationShortDatas.Add(psdBase);
             return psdBase;
@@ -175,14 +176,14 @@ namespace ProlongationService.Code
         public ProlongationShortDatum UpdateProlongationShortDatum(ProlongationShortDatum psdBase, ProductProlongationData psdInfo)
         {
             psdBase.AbonentId = psdInfo.AbonentId;
-            psdBase.TariffEndDate = psdInfo.TariffEndDate.HasValue ? DateOnly.FromDateTime((DateTime)psdInfo.TariffEndDate) : null;
-            psdBase.CertificateEndDate = psdInfo.CertificateEndDate.HasValue ? DateOnly.FromDateTime((DateTime)psdInfo.CertificateEndDate) : null;
+            psdBase.TariffEndDate = psdInfo.TariffEndDate.HasValue ? psdInfo.TariffEndDate : null;
+            psdBase.CertificateEndDate = psdInfo.CertificateEndDate.HasValue ? psdInfo.CertificateEndDate : null;
             psdBase.TotalSum = psdInfo.TotalSum;
-            psdBase.TariffInitialDate = psdInfo.TariffInitialDate.HasValue ? DateOnly.FromDateTime((DateTime)psdInfo.TariffInitialDate) : null;
-            psdBase.CertificateInitialDate = psdInfo.CertificateInitialDate.HasValue ? DateOnly.FromDateTime((DateTime)psdInfo.CertificateInitialDate) : null;
+            psdBase.TariffInitialDate = psdInfo.TariffInitialDate.HasValue ? psdInfo.TariffInitialDate : null;
+            psdBase.CertificateInitialDate = psdInfo.CertificateInitialDate.HasValue ? psdInfo.CertificateInitialDate : null;
             psdBase.RegistrationNumber = psdInfo.RegistrationNumber;
 
-            if (psdBase.TariffEndDate?.ToDateTime(new TimeOnly(0, 0, 0)) > DateTime.Now)
+            if (psdBase.TariffEndDate > DateTime.Now)
             {
                 psdBase.ReasonId = null;
                 psdBase.Comment = null;
@@ -210,16 +211,16 @@ namespace ProlongationService.Code
 
                  where
                      c.OfficeId == officeId &&
-                     (psd.TariffEndDate.HasValue && psd.TariffEndDate.Value.ToDateTime(new TimeOnly(0, 0, 0)) >= sixMonthsAgo
-                     && (!psd.CertificateEndDate.HasValue || psd.CertificateEndDate.Value.ToDateTime(new TimeOnly(0, 0, 0)) >= sixMonthsAgo))
+                     (psd.TariffEndDate.HasValue && psd.TariffEndDate.Value >= sixMonthsAgo
+                     && (!psd.CertificateEndDate.HasValue || psd.CertificateEndDate.Value >= sixMonthsAgo))
                  select new SummaryDifferenceData
                  {
                      OfficeId = c.OfficeId,
                      ProlongationId = psd.ProlongationId,
-                     TransferDate = psd.TransferDate.HasValue ? psd.TransferDate.Value.ToDateTime(new TimeOnly(0, 0, 0)) : null,
-                     TariffEndDate = psd.TariffEndDate.HasValue ? psd.TariffEndDate.Value.ToDateTime(new TimeOnly(0, 0, 0)) : null,
-                     CertificateInitialDate = psd.CertificateInitialDate.HasValue ? psd.CertificateInitialDate.Value.ToDateTime(new TimeOnly(0, 0, 0)) : null,
-                     CertificateEndDate = psd.CertificateEndDate.HasValue ? psd.CertificateEndDate.Value.ToDateTime(new TimeOnly(0, 0, 0)) : null,
+                     TransferDate = psd.TransferDate.HasValue ? psd.TransferDate.Value : null,
+                     TariffEndDate = psd.TariffEndDate.HasValue ? psd.TariffEndDate.Value : null,
+                     CertificateInitialDate = psd.CertificateInitialDate.HasValue ? psd.CertificateInitialDate.Value : null,
+                     CertificateEndDate = psd.CertificateEndDate.HasValue ? psd.CertificateEndDate.Value : null,
                      NoDispatch = psd.NoDispatch,
                      IgnoreDispatch = psd.IgnoreDispatch
                  }).Distinct().ToList();
@@ -311,13 +312,13 @@ namespace ProlongationService.Code
         public List<int> GetAbonentsIds()
         {
             var splitDate = DateTime.Now.AddDays(-90);
-            return _context.ProlongationShortDatas.Where(p => (p.Product.ProductTypeId == 20 || p.TariffInitialDate.Value.ToDateTime(new TimeOnly(0, 0, 0)) < splitDate) && p.IgnoreDispatch == false).Select(p => p.AbonentId).Distinct().ToList();
+            return _context.ProlongationShortDatas.Where(p => (p.Product.ProductTypeId == 20 || p.TariffInitialDate.Value < splitDate) && p.IgnoreDispatch == false).Select(p => p.AbonentId).Distinct().ToList();
         }
 
         public List<int> GetNoDispatchAbonentsIds()
         {
             var splitDate = DateTime.Now.AddDays(-90);
-            return _context.ProlongationShortDatas.Where(p => (p.Product.ProductTypeId == 20 || p.TariffInitialDate.Value.ToDateTime(new TimeOnly(0, 0, 0)) < splitDate) && p.NoDispatch && p.IgnoreDispatch == false).
+            return _context.ProlongationShortDatas.Where(p => (p.Product.ProductTypeId == 20 || p.TariffInitialDate.Value < splitDate) && p.NoDispatch && p.IgnoreDispatch == false).
                 Select(p => p.AbonentId).Distinct().ToList();
         }
 
