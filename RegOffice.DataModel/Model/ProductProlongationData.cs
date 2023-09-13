@@ -5,9 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ProlongationService.Containers
+namespace RegOffice.DataModel.Model
 {
-
+    [NotMapped]
     public class ProductProlongationData
     {
         public int AbonentId { get; set; }
@@ -22,6 +22,5 @@ namespace ProlongationService.Containers
 
         public DateTime? CertificateInitialDate { get; set; }
         public DateTime? CertificateEndDate { get; set; }
-
     }
 }

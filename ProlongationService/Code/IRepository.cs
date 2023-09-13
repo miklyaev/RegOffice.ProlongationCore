@@ -6,17 +6,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ProductProlongationData = RegOffice.DataModel.Model.ProductProlongationData;
 
 namespace ProlongationService.Code
 {
     public interface IRepository
     {
         PostgreeSqlContext GetContext();
-        List<ProductProlongationData> ProlongationDataLinq(int agentId, int[] products);
+        List<ProlongationShortDatum> ProlongationDataLinq(int agentId, int[] products);
         List<ProductProlongationData> GetProductsProlongationData();
         List<ProductProlongationData> GetProductsEpProlongationData();
-        ProlongationShortDatum AddProlongationShortDatum(ProductProlongationData productProlongationData);
-        ProlongationShortDatum UpdateProlongationShortDatum(ProlongationShortDatum prolongationShortDatum, ProductProlongationData productProlongationData);
+        ProlongationShortDatum AddProlongationShortDatum(ProlongationShortDatum productProlongationData);
+        ProlongationShortDatum UpdateProlongationShortDatum(ProlongationShortDatum prolongationShortDatum, ProlongationShortDatum productProlongationData);
         void RemoveProlongationShortDatum(ProlongationShortDatum prolongationShortDatum);
         ProlongationShortDatum GetProlongationShortDatum(int productId, int contractId);
         List<ProlongationShortDatum> GetProlongationShortData(Guid productGuid);

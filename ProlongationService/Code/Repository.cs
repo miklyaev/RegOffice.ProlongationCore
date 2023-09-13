@@ -15,6 +15,7 @@ using System.Linq.Expressions;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using ProductProlongationData = RegOffice.DataModel.Model.ProductProlongationData;
 
 namespace ProlongationService.Code
 {
@@ -36,30 +37,36 @@ namespace ProlongationService.Code
         {
             return _context;
         }
-        public List<ProductProlongationData> ProlongationDataLinq(int agentId, int[] productTypeIds)
+        public List<ProlongationShortDatum> ProlongationDataLinq(int agentId, int[] productTypeIds)
         {
             var sixMonthAgoDt = DateTime.Now.AddMonths(-6);
             //var minDate = DateTime.MinValue;
             //var steps = new[] { (int)StepTypeInfo.Locked, (int)StepTypeInfo.Revoked, (int)StepTypeInfo.Replaced };
             string strProductTypeIds = string.Join(",", productTypeIds.Select(x => x));
 
-            var query = $@"select 
-            t2.ProductId as ProductId
-            , t2.AbonentId as AbonentId
-            , t2.ContractId as ContractId
-            , t2.RegistrationNumber as RegistrationNumber
-            , t2.TariffInitialDate as TariffInitialDate
-            , t2.TotalSum as TotalSum
-            , t2.TariffEndDate as TariffEndDate
-            , t2.CertificateInitialDate as CertificateInitialDate
-            , t2.CertificateEndDate as CertificateEndDate
+            string query = $@"select 
+            0 as prolongation_id
+            , t2.product_id
+            , t2.abonent_id
+            , t2.contract_id
+            , t2.registration_number
+            , t2.TariffInitialDate as tariff_initial_date
+            , t2.TotalSum as total_sum
+            , t2.TariffEndDate as tariff_end_date
+            , t2.CertificateInitialDate as certificate_initial_date
+            , t2.CertificateEndDate as certificate_end_date            
+            , false as no_dispatch
+            , null as reason_id
+            , '' as comment
+            , false as ignore_dispatch
+            , CURRENT_DATE as transfer_date
             from
             (
             select
-            t.product_id as ProductId
-            , t.abonent_id as AbonentId
-            , t.contract_id as ContractId
-            , t.registration_number as RegistrationNumber
+            t.product_id
+            , t.abonent_id
+            , t.contract_id
+            , t.registration_number
             , t.initial_date as TariffInitialDate
             , sum(t.sum) over(partition by t.product_id, t.abonent_id, t.contract_id, t.registration_number) as TotalSum
             , row_number() over(partition by t.product_id, t.abonent_id, t.contract_id, t.registration_number) as n
@@ -92,7 +99,7 @@ namespace ProlongationService.Code
             where
             rta.tariff_attribute_id is null
             and ext.contract_tariff_id is null
-            and rct.end_date > '{sixMonthAgoDt.ToString("yyyy-MM-dd")}'
+            and rct.end_date > '{sixMonthAgoDt.ToString("yyyy-MM-dd HH:mm:ss")}'
             and rct.step_id not in (4, 55, 56)
             and (rpp.product_type_id in ({strProductTypeIds}) or rpp.product_type_id = 20)
             and (rpt.contract_tariff_id is null and rp.proxy_agent_id is null or rpt.product_id = rp.product_id )
@@ -118,9 +125,7 @@ namespace ProlongationService.Code
 
             where t2.n = 1";
 
-            FormattableString formattableString = $"{query}";
-            var result = _context.ProlongationShortDatas.FromSql(formattableString);
-            return null;// _context.ProlongationShortDatas.FromSql(formattableString);//Database.SqlQuery<ProductProlongationData>(formattableString).ToList();
+            return  _context.ProlongationShortDatas.FromSqlRaw(query).ToList();
         }
 
         public List<ProlongationShortDatum> GetOutdatedProlongationData()
@@ -147,7 +152,7 @@ namespace ProlongationService.Code
                     .ToList();
         }
 
-        public ProlongationShortDatum AddProlongationShortDatum(ProductProlongationData psdInfo)
+        public ProlongationShortDatum AddProlongationShortDatum(ProlongationShortDatum psdInfo)
         {
             ProlongationShortDatum psdBase = new ProlongationShortDatum
             {
@@ -173,7 +178,7 @@ namespace ProlongationService.Code
             _context.ProlongationShortDatas.Remove(prolongationShortDatum);
         }
 
-        public ProlongationShortDatum UpdateProlongationShortDatum(ProlongationShortDatum psdBase, ProductProlongationData psdInfo)
+        public ProlongationShortDatum UpdateProlongationShortDatum(ProlongationShortDatum psdBase, ProlongationShortDatum psdInfo)
         {
             psdBase.AbonentId = psdInfo.AbonentId;
             psdBase.TariffEndDate = psdInfo.TariffEndDate.HasValue ? psdInfo.TariffEndDate : null;

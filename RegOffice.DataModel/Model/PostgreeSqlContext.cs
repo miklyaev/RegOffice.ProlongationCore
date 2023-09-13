@@ -6,6 +6,7 @@ using Attribute = RegOffice.DataModel.Model.Entities.Attribute;
 using Object = RegOffice.DataModel.Model.Entities.Object;
 using ValueType = RegOffice.DataModel.Model.Entities.ValueType;
 using Version = RegOffice.DataModel.Model.Entities.Version;
+using System.Net;
 
 // Code scaffolded by EF Core assumes nullable reference types (NRTs) are not used or disabled.
 // If you have enabled NRTs for your project, then un-comment the following line:
@@ -448,6 +449,7 @@ namespace RegOffice.DataModel.Model
         public virtual DbSet<ProductView> ProductViews { get; set; }
         public virtual DbSet<ProductViewInConnect> ProductViewInConnects { get; set; }
         public virtual DbSet<ProlongationShortDatum> ProlongationShortDatas { get; set; }
+        public virtual DbSet<ProductProlongationData> ProductProlongationDatas { get; set; }
         public virtual DbSet<ProlongationShortDataSummary> ProlongationShortDataSummaries { get; set; }
         public virtual DbSet<PromotionType> PromotionTypes { get; set; }
         public virtual DbSet<PropDict> PropDicts { get; set; }
@@ -11121,7 +11123,9 @@ namespace RegOffice.DataModel.Model
                 entity.HasIndex(e => new { e.IpAddress, e.ServerId })
                     .HasName("sk_ip_server")
                     .IsUnique();
-
+                entity.Property(e => e.IpAddress)
+                    .HasConversion(v => v.ToString(),
+                                   v => IPAddress.Parse(v));
                 entity.Property(e => e.IpId)
                     .HasColumnName("ip_id")
                     .HasComment("Идентификатор");
