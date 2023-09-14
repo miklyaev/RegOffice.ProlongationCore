@@ -449,7 +449,7 @@ namespace RegOffice.DataModel.Model
         public virtual DbSet<ProductView> ProductViews { get; set; }
         public virtual DbSet<ProductViewInConnect> ProductViewInConnects { get; set; }
         public virtual DbSet<ProlongationShortDatum> ProlongationShortDatas { get; set; }
-        public virtual DbSet<ProductProlongationData> ProductProlongationDatas { get; set; }
+        //public virtual DbSet<ProductProlongationData> ProductProlongationDatas { get; set; }
         public virtual DbSet<ProlongationShortDataSummary> ProlongationShortDataSummaries { get; set; }
         public virtual DbSet<PromotionType> PromotionTypes { get; set; }
         public virtual DbSet<PropDict> PropDicts { get; set; }

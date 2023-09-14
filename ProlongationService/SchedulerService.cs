@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using HandlebarsDotNet;
+using Microsoft.EntityFrameworkCore;
 using ProlongationService.Code;
 using Quartz;
 using RegOffice.AstralLogger;
@@ -21,17 +22,19 @@ namespace ProlongationService
         }
 
         public void DoWork(bool updateNoDispach)
-        {
+        {           
             _manager.RemoveOutdatedProlongationData();
             _manager.RemoveUnactiveProductsData();
             _manager.RemoveTransferredProductsData();
 
             _manager.ProcessProlongationShortData();
+            _logger.Information("Обновление партнёров выполнено.");
 
             if (updateNoDispach)
             {
                 _manager.UpdateNoDispatchFlags(DateTime.Now.Day != 1);
             }
+            _logger.Information("Конец работы с базой");
         }
         public async Task Execute(IJobExecutionContext context)
         {
@@ -39,11 +42,15 @@ namespace ProlongationService
 
             bool updateNoDispach = DateTime.Now.Hour >= 0 && DateTime.Now.Hour < 2;
 
-            _context.Database.SetCommandTimeout(600);
-
+           
             try
             {
+                _context.Database.SetCommandTimeout(600);
+                var connectionString = _context.Database.GetConnectionString();
+                var partOfConStr = connectionString.Substring(0, connectionString.Length - connectionString.IndexOf("Username") - 1);
+                _logger.Information($"Подключение к базе выполнено: {partOfConStr}");
                 await Task.Run(() => DoWork(updateNoDispach));
+                _context.Database.CloseConnection();
                 _logger.Information("Stop SchedulerService");
             }
             catch (Exception ex)

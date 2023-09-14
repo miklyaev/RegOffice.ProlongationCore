@@ -14,7 +14,7 @@ using static System.Net.Mime.MediaTypeNames;
 namespace ProlongationService
 {
     /// <summary>
-    /// Класс для кастомизации кода сгенерированного scaffold скриптом
+    /// Класс для кастомизации кода сгенерированного scaffold скриптом через PMC
     /// Убирает префикс Ro, т.к. таблицы в базе начинаются на ro_
     /// </summary>
     public class ScaffoldingDesignTimeServices : IDesignTimeServices

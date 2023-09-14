@@ -45,14 +45,14 @@ namespace ProlongationService.Code
             };
 
             var agentIds = _repository.GetProductAgents(products).ToList();
-
+            _logger.Information($"Всего агентов {agentIds.Count}");
             foreach (var agentId in agentIds)
             {
                 IDbContextTransaction transaction = null;
                 try
                 {
                     var prdata = _repository.ProlongationDataLinq(agentId, products);
-
+                    _logger.Information($"Для агента {agentId} метод ProlongationDataLinq выполнен.");
                     transaction = _context.Database.BeginTransaction();
 
                     foreach (var psdInfo in prdata)
