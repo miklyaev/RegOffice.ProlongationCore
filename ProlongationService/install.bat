@@ -1,0 +1,1 @@
+sc create "RegOffice.ProlongationServiceCore" binPath="D:\Путь_до_испол_файла\ProlongationService.exe.exe"

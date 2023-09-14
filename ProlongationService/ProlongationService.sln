@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RegOffice.AstralLogger", ".
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RegOffice.DataModel", "..\RegOffice.DataModel\RegOffice.DataModel.csproj", "{D90B3B7B-26FA-4FFE-B226-2131A5010440}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RegOffice.General", "..\RegOffice.General\RegOffice.General.csproj", "{589CE5B5-42F6-4C00-AE7A-F91FEB698678}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RegOffice.General", "..\RegOffice.General\RegOffice.General.csproj", "{589CE5B5-42F6-4C00-AE7A-F91FEB698678}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

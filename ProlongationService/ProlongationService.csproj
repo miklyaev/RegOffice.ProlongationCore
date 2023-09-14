@@ -26,4 +26,13 @@
     <ProjectReference Include="..\RegOffice.DataModel\RegOffice.DataModel.csproj" />
     <ProjectReference Include="..\RegOffice.General\RegOffice.General.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Update="install.bat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="uninstall.bat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>
