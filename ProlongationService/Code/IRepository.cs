@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-//using ProductProlongationData = RegOffice.DataModel.Model.ProductProlongationData;
 
 namespace ProlongationService.Code
 {
@@ -26,7 +25,6 @@ namespace ProlongationService.Code
         List<int> GetNoDispatchAbonentsIds();
         Dictionary<Guid, int> GetAbonentsGuids(List<int> ids);
         List<ProlongationShortDatum> GetAbonentProlongationShortData(int id);
-
         void UpdateShortDataSummary(int agentId);
         IEnumerable<int> GetProductAgents(int[] productTypeIds);
     }

@@ -160,8 +160,6 @@ namespace ProlongationService.Code
 
                 if (counter % (_portionSize * 5) == 0)
                 {
-                    //_context.Reopen();
-                    //_repository = new Repository(_dataEngine);
                     _logger.Information("Обработка очередной порции данных завершена. Остаток: {abonentsIds.Count}.", abonentsIds.Count);
                 }
 

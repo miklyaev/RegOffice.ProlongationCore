@@ -30,11 +30,10 @@ namespace ProlongationService
             _manager.ProcessProlongationShortData();
             _logger.Information("Обновление партнёров выполнено.");
 
-            if (updateNoDispach)
+           if (updateNoDispach)
             {
                 _manager.UpdateNoDispatchFlags(DateTime.Now.Day != 1);
             }
-            _logger.Information("Конец работы с базой");
         }
         public async Task Execute(IJobExecutionContext context)
         {

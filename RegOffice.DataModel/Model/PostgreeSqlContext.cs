@@ -2,11 +2,13 @@
 using Microsoft.EntityFrameworkCore;
 using RegOffice.DataModel.Model.Entities;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+using System.Net;
+//using добавлены вручную, т.к. эти типы конфликтуют с системными классами
 using Attribute = RegOffice.DataModel.Model.Entities.Attribute;
 using Object = RegOffice.DataModel.Model.Entities.Object;
 using ValueType = RegOffice.DataModel.Model.Entities.ValueType;
 using Version = RegOffice.DataModel.Model.Entities.Version;
-using System.Net;
+
 
 // Code scaffolded by EF Core assumes nullable reference types (NRTs) are not used or disabled.
 // If you have enabled NRTs for your project, then un-comment the following line:
@@ -14,6 +16,9 @@ using System.Net;
 
 namespace RegOffice.DataModel.Model
 {
+    /// <summary>
+    /// Класс контекста, сгенерирован с помощью PsbGenerator-а
+    /// </summary>
     public partial class PostgreeSqlContext : DbContext
     {
         public PostgreeSqlContext()
@@ -449,7 +454,6 @@ namespace RegOffice.DataModel.Model
         public virtual DbSet<ProductView> ProductViews { get; set; }
         public virtual DbSet<ProductViewInConnect> ProductViewInConnects { get; set; }
         public virtual DbSet<ProlongationShortDatum> ProlongationShortDatas { get; set; }
-        //public virtual DbSet<ProductProlongationData> ProductProlongationDatas { get; set; }
         public virtual DbSet<ProlongationShortDataSummary> ProlongationShortDataSummaries { get; set; }
         public virtual DbSet<PromotionType> PromotionTypes { get; set; }
         public virtual DbSet<PropDict> PropDicts { get; set; }
