@@ -7,6 +7,7 @@
     <UserSecretsId>dotnet-ProlongationService-bb62b0e2-dca6-4a5b-95a4-2450d9d6b964</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>.</DockerfileContext>
+    <Configurations>Debug;Release;Test</Configurations>
   </PropertyGroup>
 
   <ItemGroup>

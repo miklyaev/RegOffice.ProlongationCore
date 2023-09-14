@@ -18,6 +18,8 @@ namespace ProlongationService
         private static IConfigurationRoot _configuration = new ConfigurationBuilder()
 #if DEBUG
                                                                .AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: true)
+#elif TEST
+                                                               .AddJsonFile("appsettings.Test.json", optional: true, reloadOnChange: true)
 #else
                                                                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
 #endif
